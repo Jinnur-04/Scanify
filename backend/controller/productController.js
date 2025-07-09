@@ -25,7 +25,7 @@ const generateUniqueBarcode = async () => {
   return barcode;
 };
 
-// 📦 Add new ProductType with 1 generated barcode
+// 📦 Add new ProductType with 1 unsold item
 export const addProduct = async (req, res) => {
   try {
     const { name, brand, price, discount, category, unit } = req.body;
@@ -38,18 +38,12 @@ export const addProduct = async (req, res) => {
     }
 
     const productType = new ProductType({
-      name,
-      brand,
-      price,
-      discount,
-      category,
-      unit,
-      imageUrl,
-      imagePublicId
+      name, brand, price, discount, category, unit, imageUrl, imagePublicId
     });
-    const savedType = await productType.save();
 
+    const savedType = await productType.save();
     const barcode = await generateUniqueBarcode();
+
     const productItem = new ProductItem({ barcode, type: savedType._id });
     await productItem.save();
 
@@ -79,11 +73,11 @@ export const addProductItem = async (req, res) => {
   }
 };
 
-// 🔍 Get product details by barcode
+// 🔍 Get product details by barcode (unsold only)
 export const getProductByBarcode = async (req, res) => {
   try {
-    const item = await ProductItem.findOne({ barcode: req.params.barcode }).populate('type');
-    if (!item) return res.status(404).json({ message: 'Product not found for barcode' });
+    const item = await ProductItem.findOne({ barcode: req.params.barcode, sold: false }).populate('type');
+    if (!item) return res.status(404).json({ message: 'Product not found or already sold' });
 
     res.json(item.type);
   } catch (err) {
@@ -91,11 +85,10 @@ export const getProductByBarcode = async (req, res) => {
   }
 };
 
-// 🔁 Update ProductType (optionally image)
+// 🔁 Update ProductType
 export const updateProduct = async (req, res) => {
   try {
     const updateData = req.body;
-
     const existing = await ProductType.findById(req.params.id);
     if (!existing) return res.status(404).json({ message: 'Product not found' });
 
@@ -116,7 +109,7 @@ export const updateProduct = async (req, res) => {
   }
 };
 
-// ❌ Delete ProductType + all barcodes + cloudinary image
+// ❌ Delete ProductType + barcodes + image
 export const deleteProduct = async (req, res) => {
   try {
     const type = await ProductType.findById(req.params.id);
@@ -136,54 +129,71 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
-// 📋 Get all products with available (unsold) barcode list
+// 📋 Get all products with at least one unsold barcode
 export const getAllProducts = async (req, res) => {
   try {
     const types = await ProductType.find().sort({ createdAt: -1 });
 
     const products = await Promise.all(
       types.map(async (type) => {
-        const items = await ProductItem.find({ type: type._id });
+        const items = await ProductItem.find({ type: type._id, sold: false });
+        if (items.length === 0) return null;
+
         return {
           ...type.toObject(),
-          barcodes: items.map(i => i.barcode)
+          barcodes: items.map(item => item.barcode)
         };
       })
     );
 
-    res.json(products);
+    res.json(products.filter(p => p !== null));
   } catch (err) {
     console.error('❌ Fetch error:', err);
     res.status(500).json({ message: 'Failed to fetch products', error: err.message });
   }
 };
 
-// 🔍 Get product by ID with available barcodes
+// 🔍 Get product by ID with unsold barcodes only
 export const getProductById = async (req, res) => {
   try {
     const type = await ProductType.findById(req.params.id);
     if (!type) return res.status(404).json({ message: 'Product not found' });
 
-    const items = await ProductItem.find({ type: type._id });
-    const barcodes = items.map(item => item.barcode);
+    const items = await ProductItem.find({ type: type._id, sold: false });
+    if (items.length === 0) return res.status(404).json({ message: 'No available stock for this product' });
 
-    res.json({ ...type.toObject(), barcodes });
+    res.json({
+      ...type.toObject(),
+      barcodes: items.map(item => item.barcode)
+    });
   } catch (err) {
     res.status(500).json({ message: 'Error fetching product', error: err.message });
   }
 };
 
-// 📉 Low Stock Alert (Top 5 - only available stock)
+// 📉 Low Stock Alert (Top 5 with unsold items only)
 export const getLowStockAlert = async (req, res) => {
   try {
     const types = await ProductType.find();
-    const result = [];
+    const stockMap = new Map();
 
     for (const type of types) {
-      const stock = await ProductItem.countDocuments({ type: type._id }); // unsold items only
-      result.push({ name: type.name, stock });
+      const unsoldCount = await ProductItem.countDocuments({ type: type._id, sold: false });
+
+      if (unsoldCount > 0) {
+        const name = type.name;
+
+        // Accumulate stock count by product name
+        if (stockMap.has(name)) {
+          stockMap.set(name, stockMap.get(name) + unsoldCount);
+        } else {
+          stockMap.set(name, unsoldCount);
+        }
+      }
     }
 
+    // Convert to array and sort
+    const result = Array.from(stockMap, ([name, stock]) => ({ name, stock }));
     result.sort((a, b) => a.stock - b.stock);
     const top5 = result.slice(0, 5);
 
@@ -195,3 +205,4 @@ export const getLowStockAlert = async (req, res) => {
     res.status(500).json({ message: 'Error fetching low stock data', error: err.message });
   }
 };
+

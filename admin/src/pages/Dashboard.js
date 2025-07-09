@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import Sidebar from '../inc/Sidebar';
 import Top from '../inc/Top';
 import Footer from '../inc/Footer';
+import { Chart } from 'chart.js/auto';
 
 const BASE_URL = process.env.REACT_APP_API_URL;
 
@@ -23,7 +24,16 @@ function Dashboard() {
     barStaff: { labels: [], data: [] }
   });
 
-  // Fetch stats + chart data
+  const areaChartRef = useRef(null);
+  const pieChartRef = useRef(null);
+  const lowStockChartRef = useRef(null);
+  const staffChartRef = useRef(null);
+
+  const areaInstance = useRef(null);
+  const pieInstance = useRef(null);
+  const lowStockInstance = useRef(null);
+  const staffInstance = useRef(null);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -36,7 +46,7 @@ function Dashboard() {
           axios.get(`${BASE_URL}/bills`),
           axios.get(`${BASE_URL}/staff`)
         ]);
-        console.log(revenueRes);
+
         const today = new Date().toISOString().split("T")[0];
         const billsToday = billsRes.data.filter(b => b.date?.startsWith(today)).length;
 
@@ -46,28 +56,25 @@ function Dashboard() {
           totalStaff: staffRes.data.length
         });
 
-        const area = {
-          labels: revenueRes.data.map(r => r.date),
-          revenue: revenueRes.data.map(r => r.revenue),
-          profit: revenueRes.data.map(r => parseFloat(r.profit))
-        };
-
-        const pie = {
-          labels: topProductsRes.data.labels,
-          data: topProductsRes.data.data
-        };
-
-        const barLowStock = {
-          labels: lowStockRes.data.labels,
-          data: lowStockRes.data.data
-        };
-
-        const barStaff = {
-          labels: staffPerfRes.data.labels,
-          data: staffPerfRes.data.data
-        };
-
-        setChartData({ area, pie, barLowStock, barStaff });
+        setChartData({
+          area: {
+            labels: revenueRes.data.map(r => r.date),
+            revenue: revenueRes.data.map(r => r.revenue),
+            profit: revenueRes.data.map(r => parseFloat(r.profit))
+          },
+          pie: {
+            labels: topProductsRes.data.labels,
+            data: topProductsRes.data.data
+          },
+          barLowStock: {
+            labels: lowStockRes.data.labels,
+            data: lowStockRes.data.data
+          },
+          barStaff: {
+            labels: staffPerfRes.data.labels,
+            data: staffPerfRes.data.data
+          }
+        });
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
       }
@@ -76,86 +83,118 @@ function Dashboard() {
     fetchData();
   }, []);
 
-  // Load Chart.js and render charts
   useEffect(() => {
     if (!chartData.area.labels.length) return;
 
-    const chartScript = document.createElement('script');
-    chartScript.src = '/vendor/chart.js/Chart.min.js';
-    chartScript.onload = () => {
-      // Area Chart
-      new window.Chart(document.getElementById("myAreaChart"), {
-        type: 'line',
-        data: {
-          labels: chartData.area.labels,
-          datasets: [
-            {
-              label: "Revenue",
-              data: chartData.area.revenue,
-              backgroundColor: "rgba(78, 115, 223, 0.05)",
-              borderColor: "rgba(78, 115, 223, 1)"
-            },
-            {
-              label: "Profit",
-              data: chartData.area.profit,
-              backgroundColor: "rgba(28, 200, 138, 0.05)",
-              borderColor: "rgba(28, 200, 138, 1)"
-            }
-          ]
-        },
-        options: { maintainAspectRatio: false }
-      });
-
-      // Pie Chart
-      new window.Chart(document.getElementById("myPieChart"), {
-        type: 'doughnut',
-        data: {
-          labels: chartData.pie.labels,
-          datasets: [{
-            data: chartData.pie.data,
-            backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b']
-          }]
-        },
-        options: { maintainAspectRatio: false }
-      });
-
-      // Low Stock Bar Chart
-      const stockColors = chartData.barLowStock.data.map(val => {
-        if (val > 10) return '#1cc88a';
-        else if (val > 5) return '#f6c23e';
-        return '#e74a3b';
-      });
-
-      new window.Chart(document.getElementById("myBarChart"), {
-        type: 'bar',
-        data: {
-          labels: chartData.barLowStock.labels,
-          datasets: [{
-            label: "Stock Left",
-            data: chartData.barLowStock.data,
-            backgroundColor: stockColors
-          }]
-        },
-        options: { maintainAspectRatio: false }
-      });
-
-      // Staff Performance Bar Chart
-      new window.Chart(document.getElementById("staffBarChart"), {
-        type: 'bar',
-        data: {
-          labels: chartData.barStaff.labels,
-          datasets: [{
-            label: "Bills Handled",
-            data: chartData.barStaff.data,
-            backgroundColor: "#36b9cc"
-          }]
-        },
-        options: { maintainAspectRatio: false }
-      });
+    const destroyChart = (instanceRef) => {
+      if (instanceRef.current) {
+        instanceRef.current.destroy();
+        instanceRef.current = null;
+      }
     };
 
-    document.body.appendChild(chartScript);
-    return () => document.body.removeChild(chartScript);
+    destroyChart(areaInstance);
+    destroyChart(pieInstance);
+    destroyChart(lowStockInstance);
+    destroyChart(staffInstance);
+
+    areaInstance.current = new Chart(areaChartRef.current, {
+      type: 'line',
+      data: {
+        labels: chartData.area.labels,
+        datasets: [
+          {
+            label: "Revenue",
+            data: chartData.area.revenue,
+            backgroundColor: "rgba(78, 115, 223, 0.05)",
+            borderColor: "rgba(78, 115, 223, 1)"
+          },
+          {
+            label: "Profit",
+            data: chartData.area.profit,
+            backgroundColor: "rgba(28, 200, 138, 0.05)",
+            borderColor: "rgba(28, 200, 138, 1)"
+          }
+        ]
+      },
+      options: {
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          }
+        }
+      }
+    });
+
+    pieInstance.current = new Chart(pieChartRef.current, {
+      type: 'doughnut',
+      data: {
+        labels: chartData.pie.labels,
+        datasets: [{
+          data: chartData.pie.data,
+          backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b']
+        }]
+      },
+      options: {
+        maintainAspectRatio: false
+      }
+    });
+
+    const stockColors = chartData.barLowStock.data.map(val =>
+      val > 10 ? '#1cc88a' : val > 5 ? '#f6c23e' : '#e74a3b'
+    );
+
+    lowStockInstance.current = new Chart(lowStockChartRef.current, {
+      type: 'bar',
+      data: {
+        labels: chartData.barLowStock.labels,
+        datasets: [{
+          label: "Stock Left",
+          data: chartData.barLowStock.data,
+          backgroundColor: stockColors
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1,
+              precision: 0
+            }
+          }
+        }
+      }
+    });
+
+    staffInstance.current = new Chart(staffChartRef.current, {
+      type: 'bar',
+      data: {
+        labels: chartData.barStaff.labels,
+        datasets: [{
+          label: "Bills Handled",
+          data: chartData.barStaff.data,
+          backgroundColor: "#36b9cc"
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0,
+              callback: value => Number.isInteger(value) ? value : null
+            }
+          }
+        }
+      }
+    });
   }, [chartData]);
 
   return (
@@ -169,7 +208,6 @@ function Dashboard() {
 
             {/* Summary Cards */}
             <div className="row">
-              {/* Products */}
               <div className="col-xl-3 col-md-6 mb-4">
                 <div className="card border-left-primary shadow h-100 py-2 position-relative">
                   <div className="card-body">
@@ -186,8 +224,6 @@ function Dashboard() {
                   </div>
                 </div>
               </div>
-
-              {/* Bills Today */}
               <div className="col-xl-3 col-md-6 mb-4">
                 <div className="card border-left-success shadow h-100 py-2">
                   <div className="card-body">
@@ -204,8 +240,6 @@ function Dashboard() {
                   </div>
                 </div>
               </div>
-
-              {/* Staff */}
               <div className="col-xl-3 col-md-6 mb-4">
                 <div className="card border-left-warning shadow h-100 py-2">
                   <div className="card-body">
@@ -223,8 +257,6 @@ function Dashboard() {
                 </div>
               </div>
             </div>
-
-            {/* Charts */}
             <div className="row">
               <div className="col-xl-8 col-lg-7">
                 <div className="card shadow mb-4">
@@ -233,12 +265,11 @@ function Dashboard() {
                   </div>
                   <div className="card-body">
                     <div className="chart-area">
-                      <canvas id="myAreaChart"></canvas>
+                      <canvas ref={areaChartRef}></canvas>
                     </div>
                   </div>
                 </div>
               </div>
-
               <div className="col-xl-4 col-lg-5">
                 <div className="card shadow mb-4">
                   <div className="card-header py-3 d-flex flex-row align-items-center justify-content-between">
@@ -246,14 +277,12 @@ function Dashboard() {
                   </div>
                   <div className="card-body">
                     <div className="chart-pie pt-4 pb-2">
-                      <canvas id="myPieChart"></canvas>
+                      <canvas ref={pieChartRef}></canvas>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Bar Charts */}
             <div className="row">
               <div className="col-xl-6">
                 <div className="card shadow mb-4">
@@ -262,17 +291,11 @@ function Dashboard() {
                   </div>
                   <div className="card-body">
                     <div className="chart-bar">
-                      <canvas id="myBarChart"></canvas>
-                    </div>
-                    <div className="mt-3 d-flex justify-content-around text-center">
-                      <div><span className="badge" style={{ backgroundColor: '#1cc88a', color: 'white' }}>Good Stock</span></div>
-                      <div><span className="badge" style={{ backgroundColor: '#f6c23e', color: 'white' }}>Moderate Stock</span></div>
-                      <div><span className="badge" style={{ backgroundColor: '#e74a3b', color: 'white' }}>Critical Stock</span></div>
+                      <canvas ref={lowStockChartRef}></canvas>
                     </div>
                   </div>
                 </div>
               </div>
-
               <div className="col-xl-6">
                 <div className="card shadow mb-4">
                   <div className="card-header py-3">
@@ -280,13 +303,12 @@ function Dashboard() {
                   </div>
                   <div className="card-body">
                     <div className="chart-bar">
-                      <canvas id="staffBarChart"></canvas>
+                      <canvas ref={staffChartRef}></canvas>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
         <Footer />
