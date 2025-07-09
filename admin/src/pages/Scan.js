@@ -1,54 +1,122 @@
-import React, { useState } from 'react';
-import Top from '../inc/Top'
-import Footer from '../inc/Footer';
-// import io from 'socket.io-client'; // ⛔ For future use
+import React, { useEffect, useRef, useState } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
 
-function ScanPage() {
-  const uname = localStorage.getItem("uname");
-  const [productCode, setProductCode] = useState('');
+const BarcodeScanner = () => {
+  const scannerRef = useRef(null);
+  const socketRef = useRef(null);
+  const scannerRunning = useRef(false); // ✅ Track if scanner started
 
-  // const socket = io('http://localhost:5000'); // ⛔ Will initialize when backend ready
+  const [status, setStatus] = useState("Initializing...");
+  const [scannedCode, setScannedCode] = useState("");
+  const staffId = localStorage.getItem("staffId");
 
-  const handleScan = () => {
-    if (!productCode.trim()) return;
+  useEffect(() => {
+    const startScanner = async () => {
+      try {
+        const html5QrCode = new Html5Qrcode("scanner");
 
-    const scannedData = {
-      code: productCode.trim(),
-      time: new Date().toLocaleTimeString(),
+        const config = {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          rememberLastUsedCamera: true,
+        };
+
+        const devices = await Html5Qrcode.getCameras();
+        if (devices.length === 0) {
+          setStatus("❌ No camera found");
+          return;
+        }
+
+        // Setup WebSocket
+        socketRef.current = new WebSocket("ws://localhost:4000");
+
+        socketRef.current.onopen = () => {
+          socketRef.current.send(JSON.stringify({
+            type: "register",
+            staffId,
+            clientType: "scan",
+          }));
+          console.log("🟢 WebSocket connected");
+        };
+
+        socketRef.current.onerror = (err) => {
+          console.error("❌ WebSocket error:", err);
+          setStatus("❌ WebSocket connection failed");
+        };
+
+        // Start scanning
+        const cameraId = devices[0].id;
+        await html5QrCode.start(
+          cameraId,
+          config,
+          async (decodedText) => {
+            if (decodedText === scannedCode) return;
+
+            setScannedCode(decodedText);
+            setStatus("✅ Code scanned: " + decodedText);
+
+            if (socketRef.current?.readyState === WebSocket.OPEN) {
+              socketRef.current.send(JSON.stringify({
+                type: "barcode-scanned",
+                staffId,
+                barcode: decodedText,
+              }));
+              console.log("📤 Sent barcode:", decodedText);
+            }
+
+            // ✅ Stop only if scanner is running
+            if (scannerRunning.current) {
+              await html5QrCode.stop();
+              scannerRunning.current = false;
+              console.log("⛔ Scanner stopped after scan");
+            }
+          },
+          (error) => {
+            if (!error?.name?.includes("NotFoundException")) {
+              console.warn("Scan error:", error);
+            }
+            setStatus("📷 Scanning...");
+          }
+        );
+
+        scannerRef.current = html5QrCode;
+        scannerRunning.current = true; // ✅ Mark scanner started
+        setStatus("📷 Scanning...");
+      } catch (err) {
+        console.error("Failed to start scanner:", err);
+        setStatus("❌ Camera access failed");
+      }
     };
 
-    console.log("Scanned:", scannedData);
+    startScanner();
 
-    // socket.emit('scan-product', scannedData); // ⛔ Uncomment when backend ready
+    return () => {
+      if (scannerRunning.current && scannerRef.current) {
+        scannerRef.current.stop().catch((e) =>
+          console.warn("⚠️ Stop scanner error:", e.message)
+        );
+        scannerRunning.current = false;
+      }
 
-    setProductCode('');
-  };
+      if (socketRef.current) {
+        socketRef.current.close();
+        console.log("🔌 WebSocket disconnected");
+      }
+    };
+  }, []); // ✅ Only run once on mount
 
   return (
-    <>
-       <Top user={{name: uname}}/>
-    <div className="container-fluid d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '100vh' }}>
-      <h2 className="mb-4">📲 Mobile Scanner</h2>
-
-      <input
-        type="text"
-        className="form-control text-center mb-3"
-        placeholder="Enter or Scan Product Code"
-        value={productCode}
-        onChange={(e) => setProductCode(e.target.value)}
-        style={{ maxWidth: '300px' }}
-      />
-
-      <button className="btn btn-success" onClick={handleScan}>
-        Scan Product
-      </button>
-
-      {/* <p className="mt-4 text-muted">Waiting for socket connection...</p> */}
-      
+    <div className="container mt-5 text-center">
+      <h2 className="mb-3">📦 Barcode Scanner</h2>
+      <p>{status}</p>
+      <div id="scanner" style={{ width: "300px", margin: "auto" }} />
+      {scannedCode && (
+        <div className="mt-3 alert alert-success">
+          ✅ Scanned: <strong>{scannedCode}</strong>
+        </div>
+      )}
     </div>
-    <Footer/>
-    </>
   );
-}
+};
 
-export default ScanPage;
+export default BarcodeScanner;

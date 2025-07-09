@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 function Sidebar() {
+  const isLoggedIn = localStorage.getItem("uname") !== null;
+
   return (
     <ul className="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
@@ -90,13 +92,17 @@ function Sidebar() {
         </button>
         <div id="collapsePages" className="collapse" data-parent="#accordionSidebar">
           <div className="bg-white py-2 collapse-inner rounded">
-            <h6 className="collapse-header">Login Screens:</h6>
-            <Link className="collapse-item" to="/login">Login</Link>
-            <Link className="collapse-item" to="/">Register</Link>
-            <Link className="collapse-item" to="/">Forgot Password</Link>
-            <div className="collapse-divider" />
+            {!isLoggedIn && (
+              <>
+                <h6 className="collapse-header">Login Screens:</h6>
+                <Link className="collapse-item" to="/">Login</Link>
+                <Link className="collapse-item" to="/register">Register</Link>
+                <Link className="collapse-item" to="/forgetpassword">Forgot Password</Link>
+                <div className="collapse-divider" />
+              </>
+            )}
             <h6 className="collapse-header">Other Pages:</h6>
-            <Link className="collapse-item" to="/">404 Page</Link>
+            {/* <Link className="collapse-item" to="/">404 Page</Link> */}
             <Link className="collapse-item" to="/products">Product List</Link>
             <Link className="collapse-item" to="/bill">Bill</Link>
             <Link className="collapse-item" to="/scan">Scan</Link>
@@ -105,20 +111,20 @@ function Sidebar() {
       </li>
 
       {/* Charts */}
-      <li className="nav-item">
+      {/* <li className="nav-item">
         <Link className="nav-link" to="/">
           <i className="fas fa-fw fa-chart-area" />
           <span>Charts</span>
         </Link>
-      </li>
+      </li> */}
 
       {/* Tables */}
-      <li className="nav-item">
+      {/* <li className="nav-item">
         <Link className="nav-link" to="/">
           <i className="fas fa-fw fa-table" />
           <span>Tables</span>
         </Link>
-      </li>
+      </li> */}
 
       <hr className="sidebar-divider d-none d-md-block" />
 

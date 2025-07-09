@@ -1,33 +1,57 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
+
+const BASE_URL = process.env.REACT_APP_API_URL;
 
 function Login() {
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    if (userName === 'admin' && password === '123') {
-      localStorage.setItem("uname", "Admin");
-      navigate('/dashboard');
-    } 
-    else if (userName === 'staff' && password === '123') {
-      localStorage.setItem("uname", "Staff");
-      navigate('/bill');
-    } 
-    else {
-      alert('Invalid username or password');
+  const handleLogin = async () => {
+    if (!userName || !password) {
+      alert("Please enter both username and password.");
+      return;
+    }
+
+    try {
+      const res = await axios.post(`${BASE_URL}/staff/login`, {
+        username: userName,
+        password: password,
+      });
+
+      const staff = res.data;
+
+      if (staff.status !== 'Active') {
+        alert('Your account is inactive. Please contact admin.');
+        return;
+      }
+
+      localStorage.setItem('uname', staff.name || staff.username);
+      localStorage.setItem('role', staff.role);
+      localStorage.setItem('staffId', staff._id);
+
+      if (staff.role === 'Admin' || staff.role === 'Manager') {
+        navigate('/dashboard');
+      } else if (staff.role === 'Billing') {
+        navigate('/bill');
+      } else {
+        alert("Invalid role. Access denied.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Invalid username or password');
     }
   };
 
   return (
     <div className="container">
-      {/* Outer Row */}
       <div className="row justify-content-center">
         <div className="col-xl-10 col-lg-12 col-md-9">
           <div className="card o-hidden border-0 shadow-lg my-5">
             <div className="card-body p-0">
-              {/* Nested Row within Card Body */}
               <div className="row">
                 <div className="col-lg-6 d-none d-lg-block bg-login-image" />
                 <div className="col-lg-6">
@@ -43,28 +67,26 @@ function Login() {
                           placeholder="Enter Your Username..."
                           value={userName}
                           onChange={(e) => setUserName(e.target.value)}
-                          aria-describedby="emailHelp"
                         />
                       </div>
                       <div className="form-group">
-                        <input
-                          type="password"
-                          className="form-control form-control-user"
-                          placeholder="Password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <div className="custom-control custom-checkbox small">
+                        <div className="input-group">
                           <input
-                            type="checkbox"
-                            className="custom-control-input"
-                            id="customCheck"
+                            type={showPassword ? 'text' : 'password'}
+                            className="form-control form-control-user"
+                            placeholder="Password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                           />
-                          <label className="custom-control-label" htmlFor="customCheck">
-                            Remember Me
-                          </label>
+                          <div className="input-group-append">
+                            <span
+                              className="input-group-text"
+                              style={{ cursor: 'pointer' }}
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <button
@@ -74,13 +96,6 @@ function Login() {
                       >
                         Login
                       </button>
-                      <hr />
-                      <a href="index.html" className="btn btn-google btn-user btn-block">
-                        <i className="fab fa-google fa-fw" /> Login with Google
-                      </a>
-                      <a href="index.html" className="btn btn-facebook btn-user btn-block">
-                        <i className="fab fa-facebook-f fa-fw" /> Login with Facebook
-                      </a>
                     </form>
                     <hr />
                     <div className="text-center">

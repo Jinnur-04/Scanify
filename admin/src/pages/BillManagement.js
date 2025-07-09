@@ -2,63 +2,61 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../inc/Sidebar';
 import Top from '../inc/Top';
 import Footer from '../inc/Footer';
+import axios from 'axios';
+import moment from 'moment';
 
 function BillManagement() {
   const uname = localStorage.getItem("uname");
-  const allBills = [
-    {
-      id: 1,
-      date: '2025-07-05',
-      staff: 'John Doe',
-      customer: { name: 'Ravi Kumar', phone: '9876543210' },
-      total: 850,
-      items: [
-        { name: 'Toothpaste', qty: 2, price: 100 },
-        { name: 'Soap', qty: 3, price: 150 },
-      ],
-    },
-    {
-      id: 2,
-      date: '2025-07-05',
-      staff: 'Ayesha Singh',
-      customer: { name: 'Neha Sharma', phone: '9123456780' },
-      total: 1230,
-      items: [
-        { name: 'Shampoo', qty: 2, price: 300 },
-        { name: 'Milk', qty: 3, price: 210 },
-      ],
-    },
-    {
-      id: 3,
-      date: '2025-07-04',
-      staff: 'Rahul',
-      customer: { name: 'Sanjay Patel', phone: '9988776655' },
-      total: 430,
-      items: [
-        { name: 'Pen', qty: 4, price: 20 },
-        { name: 'Notebook', qty: 2, price: 150 },
-      ],
-    },
-  ];
-  const [filter, setFilter] = useState('today');
+  const [bills, setBills] = useState([]);
   const [filteredBills, setFilteredBills] = useState([]);
+  const [filter, setFilter] = useState('today');
   const [selectedBill, setSelectedBill] = useState(null);
 
+  const BASE_URL = process.env.REACT_APP_API_URL;
+
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const filtered =
-      filter === 'today'
-        ? allBills.filter((bill) => bill.date === today)
-        : allBills;
-    setFilteredBills(filtered);
-  }, [filter]);
+    fetchBills();
+  }, []);
+
+  useEffect(() => {
+    filterBills();
+  }, [filter, bills]);
+
+  const fetchBills = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/bills`);
+      setBills(res.data);
+    } catch (err) {
+      console.error("❌ Failed to fetch bills", err);
+    }
+  };
+
+  const filterBills = () => {
+    if (filter === 'today') {
+      const today = moment().format('YYYY-MM-DD');
+      const filtered = bills.filter(bill =>
+        moment(bill.date).format('YYYY-MM-DD') === today
+      );
+      setFilteredBills(filtered);
+    } else {
+      setFilteredBills(bills);
+    }
+  };
+
+  const handleModalClose = () => {
+    setSelectedBill(null);
+    const modalBackdrop = document.querySelector('.modal-backdrop');
+    if (modalBackdrop) modalBackdrop.remove();
+    document.body.classList.remove('modal-open');
+  };
 
   return (
     <div id="wrapper">
       <Sidebar />
       <div id="content-wrapper" className="d-flex flex-column">
         <div id="content">
-          <Top user={{name: uname}}/>
+          <Top user={{ name: uname }} />
+
           <div className="container-fluid">
             <div className="d-sm-flex align-items-center justify-content-between mb-4">
               <h1 className="h3 mb-0 text-gray-800">Bill Management</h1>
@@ -75,7 +73,7 @@ function BillManagement() {
                 >
                   All Bills
                 </button>
-                <button className="btn btn-sm btn-secondary">
+                <button className="btn btn-sm btn-secondary" onClick={fetchBills}>
                   <i className="fas fa-sync-alt mr-1"></i> Refresh
                 </button>
               </div>
@@ -87,13 +85,10 @@ function BillManagement() {
                 <h6 className="m-0 font-weight-bold text-primary">
                   {filter === 'today' ? "Today's Bills" : 'All Bills'} ({filteredBills.length})
                 </h6>
-                <button className="btn btn-sm btn-success">
-                  <i className="fas fa-download mr-1"></i> Download PDF
-                </button>
               </div>
               <div className="card-body">
                 <div className="table-responsive">
-                  <table className="table table-bordered" width="100%" cellSpacing="0">
+                  <table className="table table-bordered">
                     <thead>
                       <tr>
                         <th>Bill ID</th>
@@ -107,15 +102,15 @@ function BillManagement() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredBills.map((bill) => (
-                        <tr key={bill.id}>
-                          <td>#BILL{bill.id.toString().padStart(4, '0')}</td>
-                          <td>{bill.date}</td>
-                          <td>{bill.staff}</td>
+                      {filteredBills.map((bill, index) => (
+                        <tr key={bill._id}>
+                          <td>#BILL{(index + 1).toString().padStart(4, '0')}</td>
+                          <td>{moment(bill.date).format('YYYY-MM-DD HH:mm')}</td>
+                          <td>{bill.staff?.name || 'Unknown'}</td>
                           <td>{bill.customer.name}</td>
                           <td>{bill.customer.phone}</td>
                           <td>{bill.items.length}</td>
-                          <td>₹{bill.total}</td>
+                          <td>₹{bill.total.toFixed(2)}</td>
                           <td>
                             <div className="d-flex">
                               <button
@@ -125,9 +120,6 @@ function BillManagement() {
                                 onClick={() => setSelectedBill(bill)}
                               >
                                 <i className="fas fa-eye"></i>
-                              </button>
-                              <button className="btn btn-sm btn-danger">
-                                <i className="fas fa-trash-alt"></i>
                               </button>
                             </div>
                           </td>
@@ -149,53 +141,52 @@ function BillManagement() {
             {/* View Bill Modal */}
             {selectedBill && (
               <div
-                className="modal fade"
+                className="modal fade show"
                 id="viewBillModal"
+                style={{ display: 'block' }}
                 tabIndex="-1"
                 role="dialog"
                 aria-labelledby="viewBillLabel"
-                aria-hidden="true"
+                aria-modal="true"
               >
                 <div className="modal-dialog modal-lg" role="document">
                   <div className="modal-content">
                     <div className="modal-header">
                       <h5 className="modal-title" id="viewBillLabel">
-                        Bill Details – #{selectedBill.id.toString().padStart(4, '0')}
+                        Bill Details – #{selectedBill._id.slice(-4).toUpperCase()}
                       </h5>
-                      <button type="button" className="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
+                      <button type="button" className="close" onClick={handleModalClose}>
+                        <span>&times;</span>
                       </button>
                     </div>
                     <div className="modal-body">
-                      <p><strong>Billed By:</strong> {selectedBill.staff}</p>
+                      <p><strong>Billed By:</strong> {selectedBill.staff?.name || 'Unknown'}</p>
                       <p><strong>Customer:</strong> {selectedBill.customer.name}</p>
                       <p><strong>Phone:</strong> {selectedBill.customer.phone}</p>
-                      <p><strong>Date:</strong> {selectedBill.date}</p>
+                      <p><strong>Date:</strong> {moment(selectedBill.date).format('YYYY-MM-DD HH:mm')}</p>
                       <div className="table-responsive">
                         <table className="table table-bordered">
-                          <thead className="thead-light">
+                          <thead>
                             <tr>
-                              <th>Item Name</th>
-                              <th>Quantity</th>
+                              <th>Item</th>
+                              <th>Qty</th>
                               <th>Price</th>
                               <th>Total</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {selectedBill.items.map((item, idx) => (
-                              <tr key={idx}>
+                            {selectedBill.items.map((item, i) => (
+                              <tr key={i}>
                                 <td>{item.name}</td>
                                 <td>{item.qty}</td>
-                                <td>₹{item.price}</td>
-                                <td>₹{item.qty * item.price}</td>
+                                <td>₹{item.finalPrice.toFixed(2)}</td>
+                                <td>₹{(item.qty * item.finalPrice).toFixed(2)}</td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                       </div>
-                      <div className="text-right mt-3">
-                        <h5>Total Amount: ₹{selectedBill.total}</h5>
-                      </div>
+                      <h5 className="text-right mt-3">Total: ₹{selectedBill.total.toFixed(2)}</h5>
                     </div>
                   </div>
                 </div>
