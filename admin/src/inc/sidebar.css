@@ -1,20 +1,18 @@
-/* Sidebar.css */
 .custom-sidebar {
   position: fixed;
   top: 0;
   left: -250px;
   width: 250px;
-  height: 100vh;
+  height: 100%;
   overflow-y: auto;
-  transition: all 0.3s ease-in-out;
-  z-index: 1;
+  background-color: #4e73df;
+  transition: left 0.3s ease-in-out;
+  z-index: 1050;
 
-  /* Hide scrollbar - Firefox, IE, Edge */
-  scrollbar-width: none;       /* Firefox */
-  -ms-overflow-style: none;    /* IE and Edge */
+  /* Hide scrollbars */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-
-/* Hide scrollbar - Chrome, Safari, Opera */
 .custom-sidebar::-webkit-scrollbar {
   display: none;
 }
@@ -24,8 +22,68 @@
 }
 
 .custom-sidebar.mobile {
-  z-index: 1050;
-  width: 6.5rem;
+  width: 80vw;
+  max-width: 300px;
+  height: 100vh;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
-  background-color: #4e73df;
+}
+
+/* Sidebar brand */
+.sidebar-brand {
+  padding: 1rem 0.5rem;
+  color: white;
+  font-size: 1.2rem;
+  text-decoration: none;
+}
+
+/* List and links */
+.sidebar-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.nav-item {
+  margin-bottom: 0.5rem;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  color: white !important;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-link i {
+  margin-right: 10px;
+  color: white !important;
+}
+
+.nav-link span {
+  font-size: 0.95rem;
+}
+
+.close-btn {
+  color: #4e73df;
+  background: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-weight: bold;
+}
+
+/* Prevent body overflow on keyboard popup */
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+  background-color: white;
 }
