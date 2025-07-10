@@ -29,7 +29,8 @@ const BarcodeScanner = () => {
         }
 
         // Setup WebSocket
-        socketRef.current = new WebSocket("ws://localhost:4000");
+        //socketRef.current = new WebSocket("ws://localhost:4000");
+        socketRef.current = new WebSocket("wss://https://scanify-dun.vercel.app");
 
         socketRef.current.onopen = () => {
           socketRef.current.send(JSON.stringify({
