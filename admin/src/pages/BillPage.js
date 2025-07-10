@@ -21,7 +21,7 @@ function BillPage() {
 
   useEffect(() => {
     //const socket = new WebSocket("ws://localhost:4000");
-     const socket  = new WebSocket("wss://https://scanify-dun.vercel.app");
+     const socket  = new WebSocket("wss://scanify-dun.vercel.app");
 
     socket.onopen = () => {
       socket.send(JSON.stringify({ type: 'register', staffId, clientType: 'bill' }));
