@@ -1,21 +1,27 @@
-// components/inc/Sidebar.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import './sidebar.css'; // Create this file for styles
+import './sidebar.css';
 
 function Sidebar({ isOpen, closeSidebar }) {
+  const [vh, setVh] = useState(window.innerHeight);
   const isMobile = window.innerWidth < 768;
+
+  useEffect(() => {
+    const handleResize = () => setVh(window.innerHeight);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <div
       className={`custom-sidebar ${isOpen ? 'open' : ''} ${isMobile ? 'mobile' : ''}`}
+      style={{ height: isMobile ? vh : '100%' }}
     >
-      <ul className="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion">
-        {/* Close button for mobile */}
+      <ul className="sidebar-list">
         {isMobile && (
           <div className="text-right p-2">
             <button
-              className="btn btn-sm btn-light"
+              className="btn btn-sm btn-light close-btn"
               onClick={closeSidebar}
               style={{ fontSize: '1.2rem' }}
             >
@@ -25,17 +31,14 @@ function Sidebar({ isOpen, closeSidebar }) {
         )}
 
         <Link
-  className="sidebar-brand d-flex align-items-center justify-content-center flex-column flex-md-row"
-  to="/dashboard"
->
-  <div className="sidebar-brand-icon rotate-n-15 mb-1 mb-md-0">
-    <i className="fas fa-laugh-wink" />
-  </div>
-  <div className=" mx-0 mx-md-3 text-center">
-    Scanify
-  </div>
-</Link>
-
+          className="sidebar-brand d-flex align-items-center justify-content-center flex-column flex-md-row"
+          to="/dashboard"
+        >
+          <div className="sidebar-brand-icon rotate-n-15 mb-1 mb-md-0">
+            <i className="fas fa-laugh-wink" />
+          </div>
+          <div className="mx-0 mx-md-3 text-center">Scanify</div>
+        </Link>
 
         <li className="nav-item">
           <Link className="nav-link" to="/dashboard">
