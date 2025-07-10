@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Sidebar from '../inc/Sidebar';
-import Top from '../inc/Top';
-import Footer from '../inc/Footer';
 import Barcode from 'react-barcode';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -114,10 +111,8 @@ const handleSubmit = async (e) => {
 
   return (
     <div id="wrapper">
-      <Sidebar />
       <div id="content-wrapper" className="d-flex flex-column">
         <div id="content">
-          <Top user={{ name: uname }} />
           <div className="container-fluid">
             <h1 className="h3 text-gray-800 mb-4">
               {isEdit ? 'Edit Product Type' : 'Add Product Type'}
@@ -155,7 +150,6 @@ const handleSubmit = async (e) => {
             </form>
           </div>
         </div>
-        <Footer />
       </div>
       <ToastContainer position="top-right" autoClose={2000} />
     </div>

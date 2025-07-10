@@ -4,10 +4,11 @@ import { Html5Qrcode } from 'html5-qrcode';
 const BarcodeScanner = () => {
   const scannerRef = useRef(null);
   const socketRef = useRef(null);
-  const scannerRunning = useRef(false); // ✅ Track if scanner started
+  const scannerRunning = useRef(false);
 
   const [status, setStatus] = useState("Initializing...");
   const [scannedCode, setScannedCode] = useState("");
+  const [mode, setMode] = useState("sell"); // ➕ Mode: sell or return
   const staffId = localStorage.getItem("staffId");
 
   useEffect(() => {
@@ -44,8 +45,8 @@ const BarcodeScanner = () => {
           setStatus("❌ WebSocket connection failed");
         };
 
-        // Start scanning
         const cameraId = devices[0].id;
+
         await html5QrCode.start(
           cameraId,
           config,
@@ -53,18 +54,18 @@ const BarcodeScanner = () => {
             if (decodedText === scannedCode) return;
 
             setScannedCode(decodedText);
-            setStatus("✅ Code scanned: " + decodedText);
+            setStatus(`✅ ${mode === 'sell' ? 'Selling' : 'Returning'}: ${decodedText}`);
 
             if (socketRef.current?.readyState === WebSocket.OPEN) {
               socketRef.current.send(JSON.stringify({
                 type: "barcode-scanned",
                 staffId,
                 barcode: decodedText,
+                action: mode, // 👈 Sell or return
               }));
-              console.log("📤 Sent barcode:", decodedText);
+              console.log(`📤 Sent barcode for ${mode}:`, decodedText);
             }
 
-            // ✅ Stop only if scanner is running
             if (scannerRunning.current) {
               await html5QrCode.stop();
               scannerRunning.current = false;
@@ -80,7 +81,7 @@ const BarcodeScanner = () => {
         );
 
         scannerRef.current = html5QrCode;
-        scannerRunning.current = true; // ✅ Mark scanner started
+        scannerRunning.current = true;
         setStatus("📷 Scanning...");
       } catch (err) {
         console.error("Failed to start scanner:", err);
@@ -103,16 +104,26 @@ const BarcodeScanner = () => {
         console.log("🔌 WebSocket disconnected");
       }
     };
-  }, []); // ✅ Only run once on mount
+  }, [mode]); // 🔁 Restart scanner if mode changes
+
+  const toggleMode = () => {
+    setScannedCode("");
+    setMode((prev) => (prev === "sell" ? "return" : "sell"));
+    setStatus(`🔁 Switched to ${mode === "sell" ? "Return" : "Sell"} mode. Restarting scanner...`);
+  };
 
   return (
     <div className="container mt-5 text-center">
       <h2 className="mb-3">📦 Barcode Scanner</h2>
+      <button className={`btn btn-${mode === "sell" ? "primary" : "warning"} mb-3`} onClick={toggleMode}>
+        Switch to {mode === "sell" ? "Return" : "Sell"} Mode
+      </button>
+      <p><strong>Current Mode:</strong> {mode.toUpperCase()}</p>
       <p>{status}</p>
       <div id="scanner" style={{ width: "300px", margin: "auto" }} />
       {scannedCode && (
-        <div className="mt-3 alert alert-success">
-          ✅ Scanned: <strong>{scannedCode}</strong>
+        <div className={`mt-3 alert alert-${mode === "sell" ? "success" : "warning"}`}>
+          ✅ {mode === "sell" ? "Sold" : "Returned"}: <strong>{scannedCode}</strong>
         </div>
       )}
     </div>

@@ -13,14 +13,14 @@ export const createStaff = async (req, res) => {
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
   try {
-    const { name, role, status = 'Active', username, password } = req.body;
+    const { name,email, role, status = 'InActive', username, password } = req.body;
 
     const existing = await Staff.findOne({ username });
     if (existing) return res.status(409).json({ message: 'Username already exists' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const staff = new Staff({ name, role, status, username, password: hashedPassword });
+    const staff = new Staff({ name,email, role, status, username, password: hashedPassword });
     await staff.save();
 
     res.status(201).json(staff);
@@ -128,16 +128,46 @@ export const loginStaff = async (req, res) => {
 };
 
 // Forgot password (for demo only)
+
 export const forgotPassword = async (req, res) => {
   try {
     const { username } = req.body;
+    if (username==="admin"){
+      res.status(401).json({ message: 'Forget Password for Admin is Not Applicable, error: err.message' });
+  } 
     const staff = await Staff.findOne({ username });
 
-    if (!staff) return res.status(404).json({ message: 'User not found' });
+    if (!staff) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
-    res.status(200).json({ username: staff.username, password: '🔒 Hidden for production' });
+    res.status(200).json({ message: 'User exists. You can reset password now.' });
   } catch (err) {
-    res.status(500).json({ message: 'Error finding password', error: err.message });
+    res.status(500).json({ message: 'Error checking user', error: err.message });
+  }
+};
+
+//Reset Password 
+export const resetPassword = async (req, res) => {
+  try {
+    const { username, newPassword } = req.body;
+
+    const staff = await Staff.findOne({ username });
+    if (!staff) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (newPassword.length < 4) {
+      return res.status(400).json({ message: 'Password must be at least 4 characters.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    staff.password = hashedPassword;
+    await staff.save();
+
+    res.status(200).json({ message: 'Password reset successful.' });
+  } catch (err) {
+    res.status(500).json({ message: 'Password reset failed', error: err.message });
   }
 };
 

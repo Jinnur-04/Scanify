@@ -3,26 +3,31 @@ import mongoose from 'mongoose';
 import { ProductItem } from '../model/Product.js'; // Make sure this is the correct path
 
 // Save Bill
+// Save Bill (Sell + Return Support)
 export const saveBill = async (req, res) => {
   try {
     const { date, staff, customer, items } = req.body;
 
-    // ✅ Validation
+    // ✅ Basic validation
     if (!staff || !mongoose.Types.ObjectId.isValid(staff)) {
       return res.status(400).json({ message: 'Invalid staff ID' });
     }
-
     if (!customer?.name || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'Missing customer info or bill items' });
     }
 
-    // ✅ Round prices
-    const processedItems = items.map(item => ({
-      ...item,
-      finalPrice: Math.round(item.finalPrice * 100) / 100
-    }));
+    // ✅ Round prices and infer action if not present
+    const processedItems = items.map(item => {
+      const roundedFinalPrice = Math.round(item.finalPrice * 100) / 100;
+      const action = item.action || (roundedFinalPrice < 0 ? 'return' : 'sell');
+      return {
+        ...item,
+        finalPrice: roundedFinalPrice,
+        action
+      };
+    });
 
-    // ✅ Calculate total
+    // ✅ Calculate total (sell - return)
     const total = Math.round(
       processedItems.reduce((sum, item) => sum + item.finalPrice * item.qty, 0) * 100
     ) / 100;
@@ -38,11 +43,15 @@ export const saveBill = async (req, res) => {
 
     const saved = await bill.save();
 
-    // ✅ Mark productItems as sold
+    // ✅ Update product status
     await Promise.all(
-      processedItems.map(item =>
-        ProductItem.updateOne({ barcode: item.barcode }, { sold: true })
-      )
+      processedItems.map(item => {
+        if (item.action === 'sell') {
+          return ProductItem.updateOne({ barcode: item.barcode }, { sold: true });
+        } else if (item.action === 'return') {
+          return ProductItem.updateOne({ barcode: item.barcode }, { sold: false });
+        }
+      })
     );
 
     // ✅ Populate staff name

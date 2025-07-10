@@ -1,138 +1,78 @@
+// components/inc/Sidebar.js
 import React from 'react';
 import { Link } from 'react-router-dom';
+import './sidebar.css'; // Create this file for styles
 
-function Sidebar() {
-  const isLoggedIn = localStorage.getItem("uname") !== null;
+function Sidebar({ isOpen, closeSidebar }) {
+  const isMobile = window.innerWidth < 768;
 
   return (
-    <ul className="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
-
-      {/* Sidebar - Brand */}
-      <Link className="sidebar-brand d-flex align-items-center justify-content-center" to="/">
-        <div className="sidebar-brand-icon rotate-n-15">
-          <i className="fas fa-laugh-wink" />
-        </div>
-        <div className="sidebar-brand-text mx-3">Scanify</div>
-      </Link>
-
-      <hr className="sidebar-divider my-0" />
-
-      {/* Nav Item - Dashboard */}
-      <li className="nav-item">
-        <Link className="nav-link" to="/dashboard">
-          <i className="fas fa-fw fa-tachometer-alt" />
-          <span>Dashboard</span>
-        </Link>
-      </li>
-
-      <hr className="sidebar-divider" />
-      <div className="sidebar-heading">Interface</div>
-
-      {/* Components */}
-      <li className="nav-item">
-        <button
-          className="nav-link collapsed"
-          data-toggle="collapse"
-          data-target="#collapseTwo"
-          aria-expanded="false"
-          aria-controls="collapseTwo"
-          style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left', padding: '0.75rem 1rem', color: '#fff' }}
-        >
-          <i className="fas fa-fw fa-cog" />
-          <span>Components</span>
-        </button>
-        <div id="collapseTwo" className="collapse" data-parent="#accordionSidebar">
-          <div className="bg-white py-2 collapse-inner rounded">
-            <h6 className="collapse-header">Custom Components:</h6>
-            <Link className="collapse-item" to="/">Buttons</Link>
-            <Link className="collapse-item" to="/">Cards</Link>
+    <div
+      className={`custom-sidebar ${isOpen ? 'open' : ''} ${isMobile ? 'mobile' : ''}`}
+    >
+      <ul className="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion">
+        {/* Close button for mobile */}
+        {isMobile && (
+          <div className="text-right p-2">
+            <button
+              className="btn btn-sm btn-light"
+              onClick={closeSidebar}
+              style={{ fontSize: '1.2rem' }}
+            >
+              &times;
+            </button>
           </div>
-        </div>
-      </li>
+        )}
 
-      {/* Utilities */}
-      <li className="nav-item">
-        <button
-          className="nav-link collapsed"
-          data-toggle="collapse"
-          data-target="#collapseUtilities"
-          aria-expanded="false"
-          aria-controls="collapseUtilities"
-          style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left', padding: '0.75rem 1rem', color: '#fff' }}
-        >
-          <i className="fas fa-fw fa-wrench" />
-          <span>Utilities</span>
-        </button>
-        <div id="collapseUtilities" className="collapse" data-parent="#accordionSidebar">
-          <div className="bg-white py-2 collapse-inner rounded">
-            <h6 className="collapse-header">Custom Utilities:</h6>
-            <Link className="collapse-item" to="/">Colors</Link>
-            <Link className="collapse-item" to="/">Borders</Link>
-            <Link className="collapse-item" to="/">Animations</Link>
-            <Link className="collapse-item" to="/">Other</Link>
-          </div>
-        </div>
-      </li>
+        <Link
+  className="sidebar-brand d-flex align-items-center justify-content-center flex-column flex-md-row"
+  to="/dashboard"
+>
+  <div className="sidebar-brand-icon rotate-n-15 mb-1 mb-md-0">
+    <i className="fas fa-laugh-wink" />
+  </div>
+  <div className=" mx-0 mx-md-3 text-center">
+    Scanify
+  </div>
+</Link>
 
-      <hr className="sidebar-divider" />
-      <div className="sidebar-heading">Addons</div>
 
-      {/* Pages */}
-      <li className="nav-item">
-        <button
-          className="nav-link collapsed"
-          data-toggle="collapse"
-          data-target="#collapsePages"
-          aria-expanded="false"
-          aria-controls="collapsePages"
-          style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left', padding: '0.75rem 1rem', color: '#fff' }}
-        >
-          <i className="fas fa-fw fa-folder" />
-          <span>Pages</span>
-        </button>
-        <div id="collapsePages" className="collapse" data-parent="#accordionSidebar">
-          <div className="bg-white py-2 collapse-inner rounded">
-            {!isLoggedIn && (
-              <>
-                <h6 className="collapse-header">Login Screens:</h6>
-                <Link className="collapse-item" to="/">Login</Link>
-                <Link className="collapse-item" to="/register">Register</Link>
-                <Link className="collapse-item" to="/forgetpassword">Forgot Password</Link>
-                <div className="collapse-divider" />
-              </>
-            )}
-            <h6 className="collapse-header">Other Pages:</h6>
-            {/* <Link className="collapse-item" to="/">404 Page</Link> */}
-            <Link className="collapse-item" to="/products">Product List</Link>
-            <Link className="collapse-item" to="/bill">Bill</Link>
-            <Link className="collapse-item" to="/scan">Scan</Link>
-          </div>
-        </div>
-      </li>
+        <li className="nav-item">
+          <Link className="nav-link" to="/dashboard">
+            <i className="fas fa-fw fa-tachometer-alt" />
+            <span>Dashboard</span>
+          </Link>
+        </li>
 
-      {/* Charts */}
-      {/* <li className="nav-item">
-        <Link className="nav-link" to="/">
-          <i className="fas fa-fw fa-chart-area" />
-          <span>Charts</span>
-        </Link>
-      </li> */}
+        <li className="nav-item">
+          <Link className="nav-link" to="/products">
+            <i className="fas fa-box" />
+            <span>Products</span>
+          </Link>
+        </li>
 
-      {/* Tables */}
-      {/* <li className="nav-item">
-        <Link className="nav-link" to="/">
-          <i className="fas fa-fw fa-table" />
-          <span>Tables</span>
-        </Link>
-      </li> */}
+        <li className="nav-item">
+          <Link className="nav-link" to="/bill">
+            <i className="fas fa-file-invoice" />
+            <span>Bill</span>
+          </Link>
+        </li>
 
-      <hr className="sidebar-divider d-none d-md-block" />
+        <li className="nav-item">
+          <Link className="nav-link" to="/scan">
+            <i className="fas fa-qrcode" />
+            <span>Scan</span>
+          </Link>
+        </li>
 
-      {/* Sidebar Toggler */}
-      <div className="text-center d-none d-md-inline">
-        <button className="rounded-circle border-0" id="sidebarToggle" />
-      </div>
-    </ul>
+        <li className="nav-item">
+          <Link className="nav-link" to="/staff">
+            <i className="fas fa-users" />
+            <span>Staff</span>
+          </Link>
+        </li>
+      </ul>
+    </div>
   );
 }
 

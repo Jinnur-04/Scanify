@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const BASE_URL = process.env.REACT_APP_API_URL;
 
@@ -12,7 +13,7 @@ function Login() {
 
   const handleLogin = async () => {
     if (!userName || !password) {
-      alert("Please enter both username and password.");
+      toast.error("Please enter both username and password.");
       return;
     }
 
@@ -25,25 +26,33 @@ function Login() {
       const staff = res.data;
 
       if (staff.status !== 'Active') {
-        alert('Your account is inactive. Please contact admin.');
+        toast.info('Your account is inactive. Please contact admin.');
         return;
       }
 
       localStorage.setItem('uname', staff.name || staff.username);
       localStorage.setItem('role', staff.role);
       localStorage.setItem('staffId', staff._id);
+      localStorage.setItem('token',staff.token);
+      toast.success(`Welcome ${staff.name}!`);
 
       if (staff.role === 'Admin' || staff.role === 'Manager') {
         navigate('/dashboard');
       } else if (staff.role === 'Billing') {
         navigate('/bill');
       } else {
-        alert("Invalid role. Access denied.");
+        toast.error("Invalid role. Access denied.");
       }
-    } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.message || 'Invalid username or password');
-    }
+    }catch (err) {
+  console.error(err);
+
+  if (err.code === "ERR_NETWORK" || err.message === "Network Error" || !err.response) {
+    toast.error("Server not reachable. Please check your internet or backend.");
+  } else {
+    toast.error(err.response.data.message || "Invalid username or password");
+  }
+}
+
   };
 
   return (

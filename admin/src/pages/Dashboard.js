@@ -1,9 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import Sidebar from '../inc/Sidebar';
-import Top from '../inc/Top';
-import Footer from '../inc/Footer';
 import { Chart } from 'chart.js/auto';
 
 const BASE_URL = process.env.REACT_APP_API_URL;
@@ -199,10 +196,8 @@ function Dashboard() {
 
   return (
     <div id="wrapper">
-      <Sidebar />
       <div id="content-wrapper" className="d-flex flex-column">
         <div id="content">
-          <Top user={{ name: uname }} />
           <div className="container-fluid">
             <h1 className="h3 mb-4 text-gray-800">Admin Dashboard</h1>
 
@@ -311,7 +306,6 @@ function Dashboard() {
             </div>
           </div>
         </div>
-        <Footer />
       </div>
     </div>
   );

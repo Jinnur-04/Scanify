@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from '../inc/Sidebar';
-import Top from '../inc/Top';
-import Footer from '../inc/Footer';
 import axios from 'axios';
 import moment from 'moment';
+import {Link} from 'react-router-dom'
 
 function BillManagement() {
   const uname = localStorage.getItem("uname");
@@ -52,10 +50,8 @@ function BillManagement() {
 
   return (
     <div id="wrapper">
-      <Sidebar />
       <div id="content-wrapper" className="d-flex flex-column">
         <div id="content">
-          <Top user={{ name: uname }} />
 
           <div className="container-fluid">
             <div className="d-sm-flex align-items-center justify-content-between mb-4">
@@ -194,8 +190,10 @@ function BillManagement() {
             )}
 
           </div>
+           <Link to="/dashboard" className="btn btn-secondary mt-3">
+                    ← Dashboard
+                  </Link>
         </div>
-        <Footer />
       </div>
     </div>
   );

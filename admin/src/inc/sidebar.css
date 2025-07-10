@@ -1,0 +1,31 @@
+/* Sidebar.css */
+.custom-sidebar {
+  position: fixed;
+  top: 0;
+  left: -250px;
+  width: 250px;
+  height: 100vh;
+  overflow-y: auto;
+  transition: all 0.3s ease-in-out;
+  z-index: 1;
+
+  /* Hide scrollbar - Firefox, IE, Edge */
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE and Edge */
+}
+
+/* Hide scrollbar - Chrome, Safari, Opera */
+.custom-sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+.custom-sidebar.open {
+  left: 0;
+}
+
+.custom-sidebar.mobile {
+  z-index: 1050;
+  width: 6.5rem;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+  background-color: #4e73df;
+}

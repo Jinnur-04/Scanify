@@ -1,7 +1,7 @@
-
-import './App.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-// import Scan from './pages/ScanProduct';
+import { ToastContainer } from 'react-toastify';
+import MainLayout from './inc/MainLayout';
+
 import Dashboard from './pages/Dashboard';
 import ProductList from './pages/ProductList';
 import ProductManage from './pages/ProductManage';
@@ -13,29 +13,49 @@ import ForgetPassword from './pages/ForgetPassword';
 import StaffManagement from './pages/StaffManagement';
 import BillManagement from './pages/BillManagement';
 
-
 function App() {
   return (
     <>
-   
-    <BrowserRouter>
-    
-    <Routes>  
-      <Route path='/' element={<LoginPage/>}/>
-      <Route path="/dashboard" element={<Dashboard/>} />
-      <Route path="/products" element={<ProductList/>} />
-      <Route path="/products/manage/:id?" element={<ProductManage/>} />
-      <Route path="/bill" element={<BillPage/>} />
-      <Route path='/scan' element={<ScanPage/>}/>
-      <Route path='/register' element={<RegisterPage/>}/>
-      <Route path='/forgetpassword' element={<ForgetPassword/>}/>
-      <Route path='/staff' element={<StaffManagement/>}/>
-      <Route path='/billmanagement' element={<BillManagement/>}/>
-      {/* Add more routes as needed */}
-    </Routes>
-</BrowserRouter>
-    </>
+      <BrowserRouter>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgetpassword" element={<ForgetPassword />} />
 
+          {/* Protected routes with MainLayout */}
+          <Route
+            path="/dashboard"
+            element={<MainLayout><Dashboard /></MainLayout>}
+          />
+          <Route
+            path="/products"
+            element={<MainLayout><ProductList /></MainLayout>}
+          />
+          <Route
+            path="/products/manage/:id?"
+            element={<MainLayout><ProductManage /></MainLayout>}
+          />
+          <Route
+            path="/bill"
+            element={<MainLayout><BillPage /></MainLayout>}
+          />
+          <Route
+            path="/scan"
+            element={<MainLayout><ScanPage /></MainLayout>}
+          />
+          <Route
+            path="/staff"
+            element={<MainLayout><StaffManagement /></MainLayout>}
+          />
+          <Route
+            path="/billmanagement"
+            element={<MainLayout><BillManagement /></MainLayout>}
+          />
+        </Routes>
+      </BrowserRouter>
+      <ToastContainer position="top-right" autoClose={3000} />
+    </>
   );
 }
 
