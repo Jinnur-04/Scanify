@@ -76,7 +76,7 @@ export const addProductItem = async (req, res) => {
 // 🔍 Get product details by barcode (unsold only)
 export const getProductByBarcode = async (req, res) => {
   try {
-    const item = await ProductItem.findOne({ barcode: req.params.barcode, sold: false }).populate('type');
+    const item = await ProductItem.findOne({ barcode: req.params.barcode, sold: isReturn ? true : false }).populate('type');
     if (!item) return res.status(404).json({ message: 'Product not found or already sold' });
 
     res.json(item.type);

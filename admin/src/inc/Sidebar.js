@@ -21,13 +21,22 @@ function Sidebar({ isOpen, closeSidebar }) {
         {isMobile && (
           <div className="text-right p-2">
             <button
-              className="btn btn-sm btn-light close-btn"
+              className="btn btn-light rounded-circle close-btn"
               onClick={closeSidebar}
-              style={{ fontSize: '1.2rem' }}
+              style={{
+                width: '36px',
+                height: '36px',
+                padding: 0,
+                fontSize: '1.2rem',
+                fontWeight: 'bold',
+                lineHeight: '1',
+                textAlign: 'center',
+              }}
             >
               &times;
             </button>
           </div>
+
         )}
 
         <Link

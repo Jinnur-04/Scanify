@@ -30,7 +30,7 @@ function Login() {
         return;
       }
 
-      localStorage.setItem('uname', staff.name || staff.username);
+      localStorage.setItem('uname', staff.name);
       localStorage.setItem('role', staff.role);
       localStorage.setItem('staffId', staff._id);
       localStorage.setItem('token',staff.token);
