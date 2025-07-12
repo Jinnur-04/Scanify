@@ -17,28 +17,28 @@ function Dashboard() {
   const [chartData, setChartData] = useState({
     area: { labels: [], revenue: [], profit: [] },
     pie: { labels: [], data: [] },
-    barLowStock: { labels: [], data: [] },
-    barStaff: { labels: [], data: [] }
+    forecast: { labels: [], data: [] },
+    barStaff: { labels: [], scores: [], bills: [], totals: [], discounts: [] }
   });
 
   const areaChartRef = useRef(null);
   const pieChartRef = useRef(null);
-  const lowStockChartRef = useRef(null);
+  const forecastChartRef = useRef(null);
   const staffChartRef = useRef(null);
 
   const areaInstance = useRef(null);
   const pieInstance = useRef(null);
-  const lowStockInstance = useRef(null);
+  const forecastInstance = useRef(null);
   const staffInstance = useRef(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [revenueRes, topProductsRes, lowStockRes, staffPerfRes, productsRes, billsRes, staffRes] = await Promise.all([
+        const [revenueRes, topProductsRes, forecastRes, staffPerfRes, productsRes, billsRes, staffRes] = await Promise.all([
           axios.get(`${BASE_URL}/bills/revenue`),
           axios.get(`${BASE_URL}/bills/top-selling`),
-          axios.get(`${BASE_URL}/products/low-stock/chart`),
-          axios.get(`${BASE_URL}/staff/performence/chart`),
+          axios.get(`${BASE_URL}/products/inventory/forecast`),
+          axios.get(`${BASE_URL}/bills/staff-performance`),
           axios.get(`${BASE_URL}/products`),
           axios.get(`${BASE_URL}/bills`),
           axios.get(`${BASE_URL}/staff`)
@@ -63,13 +63,16 @@ function Dashboard() {
             labels: topProductsRes.data.labels,
             data: topProductsRes.data.data
           },
-          barLowStock: {
-            labels: lowStockRes.data.labels,
-            data: lowStockRes.data.data
+          forecast: {
+            labels: forecastRes.data.map(p => p.name),
+            data: forecastRes.data.map(p => p.forecastDaysLeft ?? 0)
           },
           barStaff: {
-            labels: staffPerfRes.data.labels,
-            data: staffPerfRes.data.data
+            labels: staffPerfRes.data.map(s => s.staffName),
+            scores: staffPerfRes.data.map(s => s.score),
+            bills: staffPerfRes.data.map(s => s.billsHandled),
+            totals: staffPerfRes.data.map(s => s.totalProcessed),
+            discounts: staffPerfRes.data.map(s => s.avgDiscount)
           }
         });
       } catch (err) {
@@ -83,16 +86,16 @@ function Dashboard() {
   useEffect(() => {
     if (!chartData.area.labels.length) return;
 
-    const destroyChart = (instanceRef) => {
-      if (instanceRef.current) {
-        instanceRef.current.destroy();
-        instanceRef.current = null;
+    const destroyChart = (ref) => {
+      if (ref.current) {
+        ref.current.destroy();
+        ref.current = null;
       }
     };
 
     destroyChart(areaInstance);
     destroyChart(pieInstance);
-    destroyChart(lowStockInstance);
+    destroyChart(forecastInstance);
     destroyChart(staffInstance);
 
     areaInstance.current = new Chart(areaChartRef.current, {
@@ -116,14 +119,7 @@ function Dashboard() {
       },
       options: {
         maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              precision: 0
-            }
-          }
-        }
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
       }
     });
 
@@ -136,36 +132,24 @@ function Dashboard() {
           backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b']
         }]
       },
-      options: {
-        maintainAspectRatio: false
-      }
+      options: { maintainAspectRatio: false }
     });
 
-    const stockColors = chartData.barLowStock.data.map(val =>
-      val > 10 ? '#1cc88a' : val > 5 ? '#f6c23e' : '#e74a3b'
-    );
-
-    lowStockInstance.current = new Chart(lowStockChartRef.current, {
+    forecastInstance.current = new Chart(forecastChartRef.current, {
       type: 'bar',
       data: {
-        labels: chartData.barLowStock.labels,
+        labels: chartData.forecast.labels,
         datasets: [{
-          label: "Stock Left",
-          data: chartData.barLowStock.data,
-          backgroundColor: stockColors
+          label: "Forecast Days Left",
+          data: chartData.forecast.data,
+          backgroundColor: chartData.forecast.data.map(val =>
+            val > 5 ? '#1cc88a' : val > 2 ? '#f6c23e' : '#e74a3b')
         }]
       },
       options: {
         maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              stepSize: 1,
-              precision: 0
-            }
-          }
-        }
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } } },
+        onClick: () => window.location.href = "/products"
       }
     });
 
@@ -173,135 +157,108 @@ function Dashboard() {
       type: 'bar',
       data: {
         labels: chartData.barStaff.labels,
-        datasets: [{
-          label: "Bills Handled",
-          data: chartData.barStaff.data,
-          backgroundColor: "#36b9cc"
-        }]
+        datasets: [
+          { label: "Performance Score", data: chartData.barStaff.scores, backgroundColor: '#4e73df' },
+          { label: "Bills Handled", data: chartData.barStaff.bills, backgroundColor: '#1cc88a' },
+          { label: "Total Processed (₹)", data: chartData.barStaff.totals, backgroundColor: '#36b9cc' },
+          { label: "Avg Discount (%)", data: chartData.barStaff.discounts, backgroundColor: '#f6c23e' }
+        ]
       },
       options: {
         maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              precision: 0,
-              callback: value => Number.isInteger(value) ? value : null
-            }
-          }
-        }
+        responsive: true,
+        plugins: {
+          tooltip: { mode: 'index', intersect: false },
+          legend: { position: 'top' }
+        },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
       }
     });
   }, [chartData]);
 
   return (
-    <div id="wrapper">
-      <div id="content-wrapper" className="d-flex flex-column">
-        <div id="content">
-          <div className="container-fluid">
-            <h1 className="h3 mb-4 text-gray-800">Admin Dashboard</h1>
+    <div className="container-fluid">
+      <h1 className="h3 mb-4 text-gray-800">Admin Dashboard</h1>
 
-            {/* Summary Cards */}
-            <div className="row">
-              <div className="col-xl-3 col-md-6 mb-4">
-                <div className="card border-left-primary shadow h-100 py-2 position-relative">
-                  <div className="card-body">
-                    <div className="row no-gutters align-items-center">
-                      <div className="col mr-2">
-                        <div className="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Products</div>
-                        <div className="h5 mb-0 font-weight-bold text-gray-800">{stats.totalProducts}</div>
-                      </div>
-                      <div className="col-auto">
-                        <i className="fas fa-box fa-2x text-gray-300"></i>
-                      </div>
-                    </div>
-                    <Link to="/products" className="stretched-link"></Link>
-                  </div>
-                </div>
-              </div>
-              <div className="col-xl-3 col-md-6 mb-4">
-                <div className="card border-left-success shadow h-100 py-2">
-                  <div className="card-body">
-                    <div className="row no-gutters align-items-center">
-                      <div className="col mr-2">
-                        <div className="text-xs font-weight-bold text-success text-uppercase mb-1">Bills Generated Today</div>
-                        <div className="h5 mb-0 font-weight-bold text-gray-800">{stats.totalBillsToday}</div>
-                      </div>
-                      <div className="col-auto">
-                        <i className="fas fa-receipt fa-2x text-gray-300"></i>
-                      </div>
-                    </div>
-                    <Link to="/billmanagement" className="stretched-link"></Link>
-                  </div>
-                </div>
-              </div>
-              <div className="col-xl-3 col-md-6 mb-4">
-                <div className="card border-left-warning shadow h-100 py-2">
-                  <div className="card-body">
-                    <div className="row no-gutters align-items-center">
-                      <div className="col mr-2">
-                        <div className="text-xs font-weight-bold text-warning text-uppercase mb-1">Total Staff</div>
-                        <div className="h5 mb-0 font-weight-bold text-gray-800">{stats.totalStaff}</div>
-                      </div>
-                      <div className="col-auto">
-                        <i className="fas fa-users fa-2x text-gray-300"></i>
-                      </div>
-                    </div>
-                    <Link to="/staff" className="stretched-link"></Link>
-                  </div>
-                </div>
+      <div className="row">
+        <div className="col-xl-3 col-md-6 mb-4">
+          <div className="card border-left-primary shadow h-100 py-2">
+            <div className="card-body">
+              <div className="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Products</div>
+              <div className="h5 mb-0 font-weight-bold text-gray-800">{stats.totalProducts}</div>
+              <Link to="/products" className="stretched-link"></Link>
+            </div>
+          </div>
+        </div>
+        <div className="col-xl-3 col-md-6 mb-4">
+          <div className="card border-left-success shadow h-100 py-2">
+            <div className="card-body">
+              <div className="text-xs font-weight-bold text-success text-uppercase mb-1">Bills Generated Today</div>
+              <div className="h5 mb-0 font-weight-bold text-gray-800">{stats.totalBillsToday}</div>
+              <Link to="/billmanagement" className="stretched-link"></Link>
+            </div>
+          </div>
+        </div>
+        <div className="col-xl-3 col-md-6 mb-4">
+          <div className="card border-left-warning shadow h-100 py-2">
+            <div className="card-body">
+              <div className="text-xs font-weight-bold text-warning text-uppercase mb-1">Total Staff</div>
+              <div className="h5 mb-0 font-weight-bold text-gray-800">{stats.totalStaff}</div>
+              <Link to="/staff" className="stretched-link"></Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row">
+        <div className="col-xl-8 col-lg-7">
+          <div className="card shadow mb-4">
+            <div className="card-header py-3">
+              <h6 className="m-0 font-weight-bold text-primary">Daily Revenue & Profit Chart</h6>
+            </div>
+            <div className="card-body">
+              <div className="chart-area">
+                <canvas ref={areaChartRef}></canvas>
               </div>
             </div>
-            <div className="row">
-              <div className="col-xl-8 col-lg-7">
-                <div className="card shadow mb-4">
-                  <div className="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 className="m-0 font-weight-bold text-primary">Daily Revenue & Profit Chart</h6>
-                  </div>
-                  <div className="card-body">
-                    <div className="chart-area">
-                      <canvas ref={areaChartRef}></canvas>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="col-xl-4 col-lg-5">
-                <div className="card shadow mb-4">
-                  <div className="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 className="m-0 font-weight-bold text-primary">Top Selling Products</h6>
-                  </div>
-                  <div className="card-body">
-                    <div className="chart-pie pt-4 pb-2">
-                      <canvas ref={pieChartRef}></canvas>
-                    </div>
-                  </div>
-                </div>
+          </div>
+        </div>
+        <div className="col-xl-4 col-lg-5">
+          <div className="card shadow mb-4">
+            <div className="card-header py-3">
+              <h6 className="m-0 font-weight-bold text-primary">Top Selling Products</h6>
+            </div>
+            <div className="card-body">
+              <div className="chart-pie pt-4 pb-2">
+                <canvas ref={pieChartRef}></canvas>
               </div>
             </div>
-            <div className="row">
-              <div className="col-xl-6">
-                <div className="card shadow mb-4">
-                  <div className="card-header py-3">
-                    <h6 className="m-0 font-weight-bold text-primary">Low Stock Alerts</h6>
-                  </div>
-                  <div className="card-body">
-                    <div className="chart-bar">
-                      <canvas ref={lowStockChartRef}></canvas>
-                    </div>
-                  </div>
-                </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row">
+        <div className="col-xl-6">
+          <div className="card shadow mb-4">
+            <div className="card-header py-3 d-flex justify-content-between align-items-center">
+              <h6 className="m-0 font-weight-bold text-primary">Forecast Days Left</h6>
+              <Link to="/products" className="btn btn-sm btn-outline-primary">View Table</Link>
+            </div>
+            <div className="card-body">
+              <div className="chart-bar">
+                <canvas ref={forecastChartRef}></canvas>
               </div>
-              <div className="col-xl-6">
-                <div className="card shadow mb-4">
-                  <div className="card-header py-3">
-                    <h6 className="m-0 font-weight-bold text-primary">Staff Performance</h6>
-                  </div>
-                  <div className="card-body">
-                    <div className="chart-bar">
-                      <canvas ref={staffChartRef}></canvas>
-                    </div>
-                  </div>
-                </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-xl-6">
+          <div className="card shadow mb-4">
+            <div className="card-header py-3">
+              <h6 className="m-0 font-weight-bold text-primary">Staff Performance</h6>
+            </div>
+            <div className="card-body">
+              <div className="chart-bar">
+                <canvas ref={staffChartRef}></canvas>
               </div>
             </div>
           </div>

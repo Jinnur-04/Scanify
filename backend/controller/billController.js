@@ -1,8 +1,74 @@
-import Bill from '../model/Bill.js';
+import axios from 'axios';
 import mongoose from 'mongoose';
+import Bill from '../model/Bill.js';
+import Staff from '../model/Staff.js';
 import { ProductItem } from '../model/Product.js'; // Make sure this is the correct path
 
-// Save Bill
+
+const API= process.env.MODEL_API
+// Get Staff Performance (calls Flask AI service)
+
+export const getStaffPerformance = async (req, res) => {
+  try {
+    // Step 1: Aggregate bill data by staff
+    const aggregated = await Bill.aggregate([
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$staff',
+          billsHandled: { $sum: 1 },
+          totalProcessed: { $sum: '$total' },
+          avgDiscount: {
+            $avg: {
+              $cond: [
+                { $ne: ['$items.discount', null] },
+                {
+                  $toDouble: {
+                    $replaceOne: {
+                      input: '$items.discount',
+                      find: '%',
+                      replacement: ''
+                    }
+                  }
+                },
+                0
+              ]
+            }
+          }
+        }
+      }
+    ]);
+
+    // Step 2: Fetch all staff names
+    const staffDocs = await Staff.find({}, { _id: 1, name: 1 });
+    const nameMap = new Map(staffDocs.map(staff => [staff._id.toString(), staff.name]));
+
+    // Step 3: Format data for Flask
+    const formattedData = aggregated.map(entry => ({
+      staffId: entry._id,
+      staffName: nameMap.get(entry._id.toString()) || 'Unknown',
+      billsHandled: entry.billsHandled,
+      totalProcessed: entry.totalProcessed,
+      avgDiscount: entry.avgDiscount
+    }));
+
+    // Step 4: Call Flask AI service
+    const flaskURL = `${API}/score-staff`; // Replace with actual URL
+    const flaskResponse = await axios.post(flaskURL, formattedData);
+
+    // Step 5: Return scored result to frontend
+    res.status(200).json(flaskResponse.data);
+  } catch (err) {
+    console.error('Error generating staff performance:', err);
+    res.status(500).json({
+      message: 'Failed to generate staff performance',
+      error: err.message
+    });
+  }
+};
+
+
+
 // Save Bill (Sell + Return Support)
 export const saveBill = async (req, res) => {
   try {

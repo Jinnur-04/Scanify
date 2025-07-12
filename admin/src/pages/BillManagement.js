@@ -190,9 +190,7 @@ function BillManagement() {
             )}
 
           </div>
-           <Link to="/dashboard" className="btn btn-secondary mt-3">
-                    ← Dashboard
-                  </Link>
+         
         </div>
       </div>
     </div>

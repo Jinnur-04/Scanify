@@ -31,7 +31,7 @@ app.use(cors({
 }));
 
 // Optional: respond to preflight requests manually (if needed)
-app.options('*', cors());
+//app.options('*', cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

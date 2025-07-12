@@ -1,5 +1,8 @@
+import axios from 'axios';
+import Bill from '../model/Bill.js';
 import { ProductType, ProductItem } from '../model/Product.js';
 import cloudinary from '../utils/cloudinary.js';
+const API= process.env.MODEL_API
 
 // 📤 Upload to Cloudinary
 const uploadToCloudinary = async (buffer) => {
@@ -24,6 +27,69 @@ const generateUniqueBarcode = async () => {
   }
   return barcode;
 };
+
+
+// 📦 Inventory Forecast Controller
+export const getInventoryForecast = async (req, res) => {
+  try {
+    const allItems = await ProductItem.find().populate('type');
+
+    const productMap = {};          // name → stock
+    const barcodeNameMap = {};      // barcode → name
+
+    for (const item of allItems) {
+      const type = item.type;
+      if (!type) continue;
+
+      const name = type.name;
+      const barcode = item.barcode;
+
+      // Map barcode to product name
+      barcodeNameMap[barcode] = name;
+
+      // Count unsold items only
+      if (!item.sold) {
+        productMap[name] = (productMap[name] || 0) + 1;
+      }
+    }
+
+    // Format products array for Flask
+    const products = Object.keys(productMap).map(name => ({
+      name,
+      stock: productMap[name]
+    }));
+
+    // 📜 Fetch bills
+    const bills = await Bill.find({}, { date: 1, items: 1 });
+
+    // 🧠 Enrich with product name for Flask
+    const enrichedBills = bills.map(b => ({
+      date: b.date,
+      items: b.items.map(i => ({
+        barcode: i.barcode,
+        qty: i.qty,
+        name: barcodeNameMap[i.barcode] || null
+      })).filter(i => i.name !== null)
+    }));
+
+    // 📤 Send to Flask
+    const flaskRes = await axios.post(`${API}/inventory-forecast`, {
+      products,
+      bills: enrichedBills
+    });
+
+    res.status(200).json(flaskRes.data);
+
+  } catch (err) {
+    console.error('Inventory forecast error:', err);
+    res.status(500).json({ message: 'Inventory forecast failed', error: err.message });
+  }
+};
+
+
+
+
+
 
 // 📦 Add new ProductType with 1 unsold item
 export const addProduct = async (req, res) => {

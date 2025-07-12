@@ -25,6 +25,15 @@ function Top({ toggleSidebar }) {
           <i className="fa fa-bars" />
         </button>
 
+        {/* ✅ Back Button */}
+        <button
+          className="btn btn-outline-primary mr-3"
+          onClick={() => navigate(-1)}
+        >
+          &lt;
+        </button>
+
+
         <ul className="navbar-nav ml-auto">
           <li className="nav-item dropdown no-arrow">
             <a

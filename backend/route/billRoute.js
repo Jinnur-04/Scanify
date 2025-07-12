@@ -4,7 +4,8 @@ import {
   getBills,
   getBillById,
   getDailyRevenue,
-  getTopProducts
+  getTopProducts,
+  getStaffPerformance 
 } from '../controller/billController.js';
 
 const router = express.Router();
@@ -13,6 +14,8 @@ router.post('/', saveBill);
 router.get('/', getBills);
 router.get('/revenue', getDailyRevenue);
 router.get('/top-selling', getTopProducts);
+router.get('/staff-performance', getStaffPerformance);
 router.get('/:id', getBillById); 
+
 
 export default router;

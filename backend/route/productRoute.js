@@ -8,7 +8,8 @@ import {
   getProductByBarcode,
   updateProduct,
   deleteProduct,
-  getLowStockAlert
+  getLowStockAlert,
+  getInventoryForecast
 } from '../controller/productController.js';
 
 const router = express.Router();
@@ -16,6 +17,7 @@ const storage = multer.memoryStorage(); // For Cloudinary uploads
 const upload = multer({ storage });
 
 // ProductType CRUD
+router.get('/inventory/forecast', getInventoryForecast);
 router.post('/', upload.single('imageFile'), addProduct);
 router.put('/:id', upload.single('imageFile'), updateProduct);
 router.delete('/:id', deleteProduct);
