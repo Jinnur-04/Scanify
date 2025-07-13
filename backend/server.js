@@ -8,6 +8,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import productRoutes from './route/productRoute.js';
 import billRoutes from './route/billRoute.js';
 import staffRoutes from './route/staffRoute.js';
+import chatRoutes from './route/chatRoute.js';
 import { initializeAdmin } from './utils/DataLoader.js';
 
 dotenv.config();
@@ -40,6 +41,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/products', productRoutes);
 app.use('/api/bills', billRoutes);
 app.use('/api/staff', staffRoutes);
+app.use('/api/chat', chatRoutes);
 
 // ✅ Root route
 app.get('/', (_, res) => res.send('🚀 Scanify Backend Ready'));

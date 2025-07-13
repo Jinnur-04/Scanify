@@ -53,7 +53,7 @@ export const getStaffPerformance = async (req, res) => {
     }));
 
     // Step 4: Call Flask AI service
-    const flaskURL = `${API}/score-staff`; // Replace with actual URL
+    const flaskURL = `${API}/api/staff`; // Replace with actual URL
     const flaskResponse = await axios.post(flaskURL, formattedData);
 
     // Step 5: Return scored result to frontend

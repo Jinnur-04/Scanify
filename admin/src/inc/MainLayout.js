@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Top from './Top';
 import Footer from './Footer';
+import ChatInterface from './ChatInterface';
 
 function MainLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -28,6 +29,7 @@ function MainLayout({ children }) {
         </div>
         <Footer />
       </div>
+      <ChatInterface/>
     </div>
   );
 }

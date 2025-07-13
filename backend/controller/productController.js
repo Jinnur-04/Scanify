@@ -73,7 +73,7 @@ export const getInventoryForecast = async (req, res) => {
     }));
 
     // 📤 Send to Flask
-    const flaskRes = await axios.post(`${API}/inventory-forecast`, {
+    const flaskRes = await axios.post(`${API}/api/forecast`, {
       products,
       bills: enrichedBills
     });
