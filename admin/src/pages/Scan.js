@@ -8,7 +8,6 @@ const BarcodeScanner = () => {
 
   const [status, setStatus] = useState("Initializing...");
   const [scannedCode, setScannedCode] = useState("");
-  const [mode, setMode] = useState("sell");
   const [isScanning, setIsScanning] = useState(false);
   const [devices, setDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState(null);
@@ -28,8 +27,8 @@ const BarcodeScanner = () => {
         setDevices(cameras);
         setSelectedDevice(cameras[0].id);
         scannerRef.current = html5QrCode;
-        //socketRef.current = new WebSocket("ws://localhost:4000");
-        socketRef.current = new WebSocket("wss://scanify-3vfo.onrender.com");
+        socketRef.current = new WebSocket("ws://localhost:4000");
+        // socketRef.current = new WebSocket("wss://scanify-3vfo.onrender.com");
         socketRef.current.onopen = () => {
           socketRef.current.send(JSON.stringify({
             type: "register",
@@ -74,16 +73,15 @@ const BarcodeScanner = () => {
           if (decodedText === scannedCode) return;
 
           setScannedCode(decodedText);
-          setStatus(`✅ ${mode === 'sell' ? 'Selling' : 'Returning'}: ${decodedText}`);
+          setStatus(`✅ Scanned: ${decodedText}`);
 
           if (socketRef.current?.readyState === WebSocket.OPEN) {
             socketRef.current.send(JSON.stringify({
               type: "barcode-scanned",
               staffId,
-              barcode: decodedText,
-              action: mode,
+              barcode: decodedText
             }));
-            console.log(`📤 Sent barcode for ${mode}:`, decodedText);
+            console.log(`📤 Sent barcode:`, decodedText);
           }
         },
         (error) => {
@@ -118,24 +116,11 @@ const BarcodeScanner = () => {
     else startScan();
   };
 
-  const toggleMode = () => {
-    setScannedCode("");
-    setMode((prev) => (prev === "sell" ? "return" : "sell"));
-    setStatus(`🔁 Switched to ${mode === "sell" ? "Return" : "Sell"} mode`);
-  };
-
   return (
     <div className="container mt-4 text-center">
       <h4 className="mb-3">📦 Barcode Scanner</h4>
 
       <div className="d-flex justify-content-center gap-2 flex-wrap mb-3">
-        <button
-          className={`btn btn-${mode === "sell" ? "primary" : "warning"}`}
-          onClick={toggleMode}
-        >
-          Switch to {mode === "sell" ? "Return" : "Sell"}
-        </button>
-
         <button
           className={`btn btn-${isScanning ? "danger" : "success"}`}
           onClick={toggleScan}
@@ -144,7 +129,6 @@ const BarcodeScanner = () => {
         </button>
       </div>
 
-      {/* Device switch dropdown if more than one */}
       {devices.length > 1 && (
         <div className="form-group mb-3">
           <select
@@ -167,8 +151,8 @@ const BarcodeScanner = () => {
       <div id="scanner" style={{ width: "320px", margin: "auto" }} />
 
       {scannedCode && (
-        <div className={`alert alert-${mode === "sell" ? "success" : "warning"} mt-3`}>
-          ✅ <strong>{scannedCode}</strong> scanned for {mode === "sell" ? "Selling" : "Returning"}
+        <div className="alert alert-info mt-3">
+          ✅ <strong>{scannedCode}</strong> scanned
         </div>
       )}
     </div>

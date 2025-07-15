@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axios from '../utils/axiosInstance';
 import { Link } from 'react-router-dom';
 
-const BASE_URL = process.env.REACT_APP_API_URL;
 
 function StaffManagement() {
   const uname = localStorage.getItem("uname");
   const [showPassword, setShowPassword] = useState(false);
   const [staffList, setStaffList] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const token = localStorage.getItem('token');
   const [editStaff, setEditStaff] = useState(null);
 
   useEffect(() => {
@@ -18,7 +16,7 @@ function StaffManagement() {
 
   const fetchStaffList = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/staff`);
+      const response = await axios.get(`/staff`);
       setStaffList(response.data);
     } catch (error) {
       console.error("Error fetching staff:", error);
@@ -27,9 +25,7 @@ function StaffManagement() {
 
   const handleEditSave = async () => {
     try {
-      const response = await axios.put(`${BASE_URL}/staff/${editStaff._id}`, editStaff, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.put(`/staff/${editStaff._id}`, editStaff);
       const updated = response.data;
       setStaffList(staffList.map((s) => (s._id === updated._id ? updated : s)));
       setEditStaff(null);
@@ -41,9 +37,7 @@ function StaffManagement() {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`${BASE_URL}/staff/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(`/staff/${id}`);
       setStaffList(staffList.filter((s) => s._id !== id));
     } catch (error) {
       console.error('Error deleting staff:', error);

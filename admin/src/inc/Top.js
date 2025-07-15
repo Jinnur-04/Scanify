@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 function Top({ toggleSidebar }) {
   const navigate = useNavigate();
   const uname = localStorage.getItem("uname");
+  const profileImage = localStorage.getItem("photo") || "/img/undraw_profile.svg";
 
   // Capitalize first letter of name
   const formattedName = uname
@@ -11,7 +12,13 @@ function Top({ toggleSidebar }) {
     : '';
 
   const handleLogout = () => {
-    localStorage.clear(); // or remove specific items
+    // Close the logout modal if it's open
+    const modalEl = document.getElementById('logoutModal');
+    if (modalEl) {
+      window.$(modalEl).modal('hide');
+    }
+
+    localStorage.clear();
     navigate('/');
   };
 
@@ -33,7 +40,6 @@ function Top({ toggleSidebar }) {
           &lt;
         </button>
 
-
         <ul className="navbar-nav ml-auto">
           <li className="nav-item dropdown no-arrow">
             <a
@@ -50,20 +56,23 @@ function Top({ toggleSidebar }) {
               </span>
               <img
                 className="img-profile rounded-circle"
-                src="img/undraw_profile.svg"
+                src={profileImage}
                 alt="profile"
               />
             </a>
 
-            {/* Dropdown menu */}
             <div
               className="dropdown-menu dropdown-menu-right shadow animated--grow-in"
               aria-labelledby="userDropdown"
             >
-              <a className="dropdown-item" href="#!">
+              <button
+                className="dropdown-item"
+                onClick={() => navigate('/profile')}
+              >
                 <i className="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                 My Profile
-              </a>
+              </button>
+
               <div className="dropdown-divider"></div>
               <a
                 className="dropdown-item"

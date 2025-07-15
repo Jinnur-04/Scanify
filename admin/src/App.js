@@ -1,6 +1,9 @@
+// App.jsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
+
 import MainLayout from './inc/MainLayout';
+import PrivateRoute from './utils/PrivateRoute';
 
 import Dashboard from './pages/Dashboard';
 import ProductList from './pages/ProductList';
@@ -12,6 +15,7 @@ import RegisterPage from './pages/Register';
 import ForgetPassword from './pages/ForgetPassword';
 import StaffManagement from './pages/StaffManagement';
 import BillManagement from './pages/BillManagement';
+import ProfileManagement from './pages/Profile';
 
 function App() {
   return (
@@ -23,34 +27,71 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgetpassword" element={<ForgetPassword />} />
 
-          {/* Protected routes with MainLayout */}
+          {/* Protected routes */}
           <Route
             path="/dashboard"
-            element={<MainLayout><Dashboard /></MainLayout>}
+            element={
+              <PrivateRoute>
+                <MainLayout><Dashboard /></MainLayout>
+              </PrivateRoute>
+            }
           />
           <Route
             path="/products"
-            element={<MainLayout><ProductList /></MainLayout>}
+            element={
+              <PrivateRoute>
+                <MainLayout><ProductList /></MainLayout>
+              </PrivateRoute>
+            }
           />
           <Route
             path="/products/manage/:id?"
-            element={<MainLayout><ProductManage /></MainLayout>}
+            element={
+              <PrivateRoute>
+                <MainLayout><ProductManage /></MainLayout>
+              </PrivateRoute>
+            }
           />
           <Route
             path="/bill"
-            element={<MainLayout><BillPage /></MainLayout>}
+            element={
+              <PrivateRoute>
+                <MainLayout><BillPage /></MainLayout>
+              </PrivateRoute>
+            }
           />
           <Route
             path="/scan"
-            element={<MainLayout><ScanPage /></MainLayout>}
+            element={
+              <PrivateRoute>
+                <MainLayout><ScanPage /></MainLayout>
+              </PrivateRoute>
+            }
           />
           <Route
             path="/staff"
-            element={<MainLayout><StaffManagement /></MainLayout>}
+            element={
+              <PrivateRoute>
+                <MainLayout><StaffManagement /></MainLayout>
+              </PrivateRoute>
+            }
           />
           <Route
             path="/billmanagement"
-            element={<MainLayout><BillManagement /></MainLayout>}
+            element={
+              <PrivateRoute>
+                <MainLayout><BillManagement /></MainLayout>
+              </PrivateRoute>
+            }
+          />
+        
+        <Route
+            path="/profile"
+            element={
+              <PrivateRoute>
+                <MainLayout><ProfileManagement /></MainLayout>
+              </PrivateRoute>
+            }
           />
         </Routes>
       </BrowserRouter>

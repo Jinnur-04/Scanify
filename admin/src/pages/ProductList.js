@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Barcode from 'react-barcode';
-import axios from 'axios';
+import axios from '../utils/axiosInstance';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -13,7 +13,6 @@ function ProductList() {
   const [groupedView, setGroupedView] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const API = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
     fetchProducts();
@@ -24,8 +23,8 @@ function ProductList() {
       if (groupedView) {
         // Fetch forecast and product details to merge
         const [forecastRes, productRes] = await Promise.all([
-          axios.get(`${API}/products/inventory/forecast`),
-          axios.get(`${API}/products`)
+          axios.get('/products/inventory/forecast'),
+          axios.get('/products')
         ]);
 
         // Merge forecast with full product data using name
@@ -36,7 +35,7 @@ function ProductList() {
 
         setProducts(merged);
       } else {
-        const res = await axios.get(`${API}/products`);
+        const res = await axios.get('/products');
         setProducts(res.data);
       }
     } catch (err) {
@@ -48,7 +47,7 @@ function ProductList() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
     try {
-      await axios.delete(`${API}/products/${id}`);
+      await axios.delete(`/products/${id}`);
       setProducts(products.filter((product) => product._id !== id));
       toast.success("Product deleted successfully");
     } catch (error) {
@@ -75,12 +74,15 @@ function ProductList() {
                 >
                   {groupedView ? "See Full Item List" : "Back to Forecast View"}
                 </button>
-                <button
-                  className="btn btn-success"
-                  onClick={() => navigate('/products/manage')}
-                >
-                  + Add Product
-                </button>
+                {localStorage.getItem("role") === "Admin" && (
+                  <button
+                    className="btn btn-success"
+                    onClick={() => navigate('/products/manage')}
+                  >
+                    + Add Product
+                  </button>
+                )}
+
               </div>
             </div>
 
@@ -113,7 +115,8 @@ function ProductList() {
                     ) : (
                       <th>Barcodes</th>
                     )}
-                    <th>Actions</th>
+                    { localStorage.getItem("role") === "Admin" && (
+                    <th>Actions</th>)}
                   </tr>
                 </thead>
                 <tbody>
@@ -161,6 +164,7 @@ function ProductList() {
                           </td>
                         )}
 
+                        { localStorage.getItem("role") === "Admin" && (
                         <td>
                           <button
                             className="btn btn-sm btn-info mr-1"
@@ -176,7 +180,7 @@ function ProductList() {
                           >
                             <i className="fas fa-trash-alt"></i>
                           </button>
-                        </td>
+                        </td>)}
                       </tr>
                     ))
                   ) : (

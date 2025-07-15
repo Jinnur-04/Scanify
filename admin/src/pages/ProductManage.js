@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Barcode from 'react-barcode';
 import { toast, ToastContainer } from 'react-toastify';
+import axios from '../utils/axiosInstance';
 import 'react-toastify/dist/ReactToastify.css';
 
 function ProductManage() {
@@ -24,29 +25,27 @@ function ProductManage() {
 
   // ✅ Load product if in edit mode
   useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/products/${id}`);
-        const data = await response.json();
+ const fetchProduct = async () => {
+  try {
+    const { data } = await axios.get(`/products/${id}`);
+    setProductType({
+      name: data.name || '',
+      price: data.price || '',
+      category: data.category || '',
+      brand: data.brand || '',
+      unit: data.unit || '',
+      discount: data.discount || '',
+      imageFile: null
+    });
+    if (data.barcodes?.length) {
+      setBarcode(data.barcodes[0]);
+    }
+  } catch (err) {
+    console.error('❌ Error fetching product:', err);
+    toast.error("Failed to load product");
+  }
+};
 
-        setProductType({
-          name: data.name || '',
-          price: data.price || '',
-          category: data.category || '',
-          brand: data.brand || '',
-          unit: data.unit || '',
-          discount: data.discount || '',
-          imageFile: null
-        });
-
-        if (data.barcodes?.length) {
-          setBarcode(data.barcodes[0]); // show first barcode
-        }
-      } catch (err) {
-        console.error('❌ Error fetching product:', err);
-        toast.error("Failed to load product");
-      }
-    };
 
     if (isEdit) {
       fetchProduct();
@@ -71,42 +70,30 @@ const handleSubmit = async (e) => {
     }
   });
 
-  const url = isEdit
-    ? `${process.env.REACT_APP_API_URL}/products/${id}`
-    : `${process.env.REACT_APP_API_URL}/products`;
-  const method = isEdit ? 'PUT' : 'POST';
-
   try {
-    const response = await fetch(url, {
-      method,
-      body: formData,
+    const { data: result } = await axios({
+      method: isEdit ? 'PUT' : 'POST',
+      url: isEdit ? `/products/${id}` : `/products`,
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      }
     });
 
-    const result = await response.json();
-    console.log("✅ Response:", result);
+    toast.success(isEdit ? "Product updated" : "Product added");
 
-    if (response.ok) {
-      toast.success(isEdit ? "Product updated" : "Product added");
-
-      if (!isEdit && result.barcode) {
-        setBarcode(result.barcode); // show generated barcode
-        setTimeout(() => {
-          navigate('/products');
-        }, 5000); // delay navigation to allow barcode preview
-      }
-
-      if (isEdit) {
-        navigate('/products'); // immediate navigation for update
-      }
-
-    } else {
-      toast.error("Failed to save product");
+    if (!isEdit && result.barcode) {
+      setBarcode(result.barcode);
+      setTimeout(() => navigate('/products'), 5000);
     }
+
+    if (isEdit) navigate('/products');
   } catch (err) {
     console.error("❌ Submission error:", err);
     toast.error("Error submitting product");
   }
 };
+
 
 
   return (

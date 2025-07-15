@@ -140,16 +140,29 @@ export const addProductItem = async (req, res) => {
 };
 
 // 🔍 Get product details by barcode (unsold only)
+
 export const getProductByBarcode = async (req, res) => {
   try {
-    const item = await ProductItem.findOne({ barcode: req.params.barcode, sold: isReturn ? true : false }).populate('type');
-    if (!item) return res.status(404).json({ message: 'Product not found or already sold' });
+    console.log("🔍 Fetching product by barcode:", req.params.barcode);
 
-    res.json(item.type);
+    const item = await ProductItem.findOne({ barcode: req.params.barcode }).populate('type');
+
+    if (!item) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    const productWithStatus = {
+      ...item.type.toObject(),
+      sold: item.sold
+    };
+
+    res.json(productWithStatus);
   } catch (err) {
+    console.error("❌ Error in getProductByBarcode:", err);
     res.status(500).json({ message: 'Failed to fetch product by barcode', error: err.message });
   }
 };
+
 
 // 🔁 Update ProductType
 export const updateProduct = async (req, res) => {

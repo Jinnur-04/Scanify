@@ -4,6 +4,11 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
+import cloudinary from '../utils/cloudinary.js';
+import multer from 'multer';
+
+const storage = multer.memoryStorage();
+export const upload = multer({ storage });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 
@@ -114,14 +119,16 @@ export const loginStaff = async (req, res) => {
       { expiresIn: '1d' }
     );
 
-    res.json({
-      _id: staff._id,
-      name: staff.name,
-      username: staff.username,
-      role: staff.role,
-      status: staff.status,
-      token,
-    });
+   res.json({
+  _id: staff._id,
+  name: staff.name,
+  username: staff.username,
+  role: staff.role,
+  status: staff.status,
+  profileImageUrl: staff.profileImageUrl || '',
+  imagePublicId: staff.imagePublicId || '',
+  token,
+});
   } catch (err) {
     res.status(500).json({ message: 'Login error', error: err.message });
   }
@@ -209,6 +216,92 @@ export const getStaffPerformance = async (req, res) => {
     res.json({ labels, data });
   } catch (err) {
     res.status(500).json({ message: 'Error fetching staff performance', error: err.message });
+  }
+};
+
+// 📋 Get full staff profile with bill count
+export const getStaffProfileWithStats = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const staff = await Staff.findById(id).select('-password');
+    if (!staff) return res.status(404).json({ message: 'Staff not found' });
+
+    const billCount = await Bill.countDocuments({ staff: id });
+
+    res.json({ 
+      ...staff.toObject(), 
+      billsHandled: billCount 
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching profile', error: err.message });
+  }
+};
+
+// 🔑 Change password
+export const changeStaffPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { currentPassword, newPassword } = req.body;
+
+    const staff = await Staff.findById(id);
+    if (!staff) return res.status(404).json({ message: 'Staff not found' });
+
+    const isMatch = await bcrypt.compare(currentPassword, staff.password);
+    if (!isMatch) return res.status(401).json({ message: 'Current password is incorrect' });
+
+    if (newPassword.length < 4)
+      return res.status(400).json({ message: 'New password must be at least 4 characters.' });
+
+    staff.password = await bcrypt.hash(newPassword, 10);
+    await staff.save();
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error updating password', error: err.message });
+  }
+};
+
+
+
+
+// 📸 Update profile photo
+export const updateProfilePhoto = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const staff = await Staff.findById(id);
+    if (!staff) return res.status(404).json({ message: 'Staff not found' });
+
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+
+    // Upload to Cloudinary
+    const streamUpload = () => {
+      return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: 'scanify-profiles' },
+          (error, result) => {
+            if (result) resolve(result);
+            else reject(error);
+          }
+        );
+        stream.end(req.file.buffer); // ✅ Call .end() on the stream
+      });
+    };
+
+    const result = await streamUpload();
+
+    // Update profile fields
+    staff.profileImageUrl = result.secure_url;
+    staff.imagePublicId = result.public_id;
+    await staff.save();
+
+    res.json({
+      message: 'Profile photo updated',
+      photo: result.secure_url,
+    });
+  } catch (err) {
+    console.error('❌ Profile photo upload error:', err);
+    res.status(500).json({ message: 'Error updating profile photo', error: err.message });
   }
 };
 

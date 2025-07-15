@@ -7,7 +7,11 @@ from services.forecast_service import generate_inventory_forecast
 from services.staff_service import evaluate_staff_scores
 
 # ===================== Setup =====================
-model = SentenceTransformer('all-mpnet-base-v2')
+
+os.environ['TRANSFORMERS_CACHE'] = '/app/hf_cache'
+os.environ['HF_HOME'] = '/app/hf_cache'  # also avoids /.cache/huggingface fallback
+model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
+
 uri = os.getenv("MONGO_URI")
 client = MongoClient(uri)
 db = client["scanify"]

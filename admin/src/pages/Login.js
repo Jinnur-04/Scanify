@@ -30,10 +30,12 @@ function Login() {
         return;
       }
 
-      localStorage.setItem('uname', staff.name);
-      localStorage.setItem('role', staff.role);
-      localStorage.setItem('staffId', staff._id);
-      localStorage.setItem('token',staff.token);
+      localStorage.setItem('uname', res.data.name);
+      localStorage.setItem('role', res.data.role);
+      localStorage.setItem('staffId', res.data._id);
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('photo', res.data.profileImageUrl || ''); // ✅ Save profile photo URL
+
       toast.success(`Welcome ${staff.name}!`);
 
       if (staff.role === 'Admin' || staff.role === 'Manager') {
@@ -43,15 +45,15 @@ function Login() {
       } else {
         toast.error("Invalid role. Access denied.");
       }
-    }catch (err) {
-  console.error(err);
+    } catch (err) {
+      console.error(err);
 
-  if (err.code === "ERR_NETWORK" || err.message === "Network Error" || !err.response) {
-    toast.error("Server not reachable. Please check your internet or backend.");
-  } else {
-    toast.error(err.response.data.message || "Invalid username or password");
-  }
-}
+      if (err.code === "ERR_NETWORK" || err.message === "Network Error" || !err.response) {
+        toast.error("Server not reachable. Please check your internet or backend.");
+      } else {
+        toast.error(err.response.data.message || "Invalid username or password");
+      }
+    }
 
   };
 

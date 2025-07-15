@@ -5,12 +5,15 @@ import './sidebar.css';
 function Sidebar({ isOpen, closeSidebar }) {
   const [vh, setVh] = useState(window.innerHeight);
   const isMobile = window.innerWidth < 768;
+  const role = localStorage.getItem('role'); // e.g., 'Admin', 'Manager', 'Billing', etc.
 
   useEffect(() => {
     const handleResize = () => setVh(window.innerHeight);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  const isAdmin = role === 'Admin' || role === 'Manager';
 
   return (
     <div
@@ -36,12 +39,11 @@ function Sidebar({ isOpen, closeSidebar }) {
               &times;
             </button>
           </div>
-
         )}
 
         <Link
           className="sidebar-brand d-flex align-items-center justify-content-center flex-column flex-md-row"
-          to="/dashboard"
+          to={isAdmin ? "/dashboard" : "/bill"}
         >
           <div className="sidebar-brand-icon rotate-n-15 mb-1 mb-md-0">
             <i className="fas fa-laugh-wink" />
@@ -49,13 +51,17 @@ function Sidebar({ isOpen, closeSidebar }) {
           <div className="mx-0 mx-md-3 text-center">Scanify</div>
         </Link>
 
-        <li className="nav-item">
-          <Link className="nav-link" to="/dashboard">
-            <i className="fas fa-fw fa-tachometer-alt" />
-            <span>Dashboard</span>
-          </Link>
-        </li>
+        {/* Dashboard - only for Admin/Manager */}
+        {isAdmin && (
+          <li className="nav-item">
+            <Link className="nav-link" to="/dashboard">
+              <i className="fas fa-fw fa-tachometer-alt" />
+              <span>Dashboard</span>
+            </Link>
+          </li>
+        )}
 
+        {/* Products, Bill, Scan - visible to all roles */}
         <li className="nav-item">
           <Link className="nav-link" to="/products">
             <i className="fas fa-box" />
@@ -77,12 +83,15 @@ function Sidebar({ isOpen, closeSidebar }) {
           </Link>
         </li>
 
-        <li className="nav-item">
-          <Link className="nav-link" to="/staff">
-            <i className="fas fa-users" />
-            <span>Staff</span>
-          </Link>
-        </li>
+        {/* Staff - only for Admin/Manager */}
+        {isAdmin && (
+          <li className="nav-item">
+            <Link className="nav-link" to="/staff">
+              <i className="fas fa-users" />
+              <span>Staff</span>
+            </Link>
+          </li>
+        )}
       </ul>
     </div>
   );

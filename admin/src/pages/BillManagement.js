@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../utils/axiosInstance';
 import moment from 'moment';
 import {Link} from 'react-router-dom'
 
@@ -22,7 +22,7 @@ function BillManagement() {
 
   const fetchBills = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/bills`);
+      const res = await axios.get(`/bills`);
       setBills(res.data);
     } catch (err) {
       console.error("❌ Failed to fetch bills", err);

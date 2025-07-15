@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 
-const authMiddleware = (req, res, next) => {
+export const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer '))
@@ -19,4 +19,15 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-export default authMiddleware;
+// middleware/role.js
+export const authorizeRoles = (...allowedRoles) => {
+  return (req, res, next) => {
+    const userRole = req.user.role; // assuming decoded JWT sets req.user
+    if (!allowedRoles.includes(userRole)) {
+      return res.status(403).json({ message: 'Access Denied: Insufficient permissions' });
+    }
+    next();
+  };
+}
+
+

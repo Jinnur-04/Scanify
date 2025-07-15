@@ -19,7 +19,17 @@
 .custom-sidebar::-webkit-scrollbar {
   display: none;
 }
-
+.sidebar-brand,
+.sidebar-brand:hover,
+.sidebar-brand:focus,
+.sidebar-brand:active {
+  text-decoration: none;
+  color: white;
+}
+.sidebar-brand.no-hover:hover {
+  color: white;
+  text-decoration: none;
+}
 .custom-sidebar.open {
   transform: translateX(0); /* Slide in */
   opacity: 1;

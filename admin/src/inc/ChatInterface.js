@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import axios from '../utils/axiosInstance'; 
 
-const API = process.env.REACT_APP_API_URL
 const ChatInterface = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([]);
@@ -37,7 +36,7 @@ const ChatInterface = () => {
         try {
             setIsTyping(true);
             console.log("Sending user message:", userMessage);
-            const res = await axios.post(`${API}/chat/query`, { query: userMessage });
+            const res = await axios.post(`/chat/query`, { query: userMessage });
             console.log("Received AI response:", res.data);
             const reply = res.data?.message || "Sorry, I didn't understand that.";
             await simulateTyping(reply);

@@ -1,4 +1,7 @@
 import express from 'express';
+import { body } from 'express-validator';
+import multer from 'multer';
+
 import {
   createStaff,
   getAllStaff,
@@ -7,14 +10,17 @@ import {
   deleteStaff,
   loginStaff,
   forgotPassword,
+  resetPassword,
   getStaffPerformance,
-  resetPassword
+  getStaffProfileWithStats,
+  changeStaffPassword,
+  updateProfilePhoto
 } from '../controller/staffController.js';
 
-import { body } from 'express-validator';
-import authMiddleware from '../middlewares/authMiddleware.js';
+import { authMiddleware, authorizeRoles } from '../middlewares/auth.js';
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() }); // For profile photo upload
 
 // 🔓 Public routes
 router.post(
@@ -38,17 +44,23 @@ router.post(
   loginStaff
 );
 
-// ❗ Forgot and reset password — without middleware
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 
-// 📊 Staff performance chart (keep before /:id to avoid conflict)
-router.get('/performence/chart', getStaffPerformance);
+// 🔐 Protected Routes
 
-// 🔐 Protected staff routes
-router.get('/', getAllStaff);
+// 📊 Staff performance chart (Admin, Manager)
+router.get('/performence/chart', authMiddleware, authorizeRoles('Admin', 'Manager'), getStaffPerformance);
+
+// 👤 My Profile routes
+router.get('/:id/details', authMiddleware, getStaffProfileWithStats);                 // Profile + stats
+router.patch('/:id/password', authMiddleware, changeStaffPassword);                  // Change password
+router.patch('/:id/photo', authMiddleware, upload.single('photo'), updateProfilePhoto); // Update profile pic
+
+// 👥 Staff management (Admin only)
+router.get('/', authMiddleware, authorizeRoles('Admin'), getAllStaff);
 router.get('/:id', authMiddleware, getStaffById);
 router.put('/:id', authMiddleware, updateStaff);
-router.delete('/:id', authMiddleware, deleteStaff);
+router.delete('/:id', authMiddleware, authorizeRoles('Admin'), deleteStaff);
 
 export default router;

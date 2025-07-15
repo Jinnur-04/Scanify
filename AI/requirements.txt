@@ -1,3 +1,6 @@
 flask
 flask-cors
 pandas
+requests
+sentence-transformers
+pymongo

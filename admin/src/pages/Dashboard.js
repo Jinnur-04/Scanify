@@ -1,9 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../utils/axiosInstance'; 
 import { Chart } from 'chart.js/auto';
-
-const BASE_URL = process.env.REACT_APP_API_URL;
 
 function Dashboard() {
   const uname = localStorage.getItem("uname");
@@ -35,13 +33,13 @@ function Dashboard() {
     const fetchData = async () => {
       try {
         const [revenueRes, topProductsRes, forecastRes, staffPerfRes, productsRes, billsRes, staffRes] = await Promise.all([
-          axios.get(`${BASE_URL}/bills/revenue`),
-          axios.get(`${BASE_URL}/bills/top-selling`),
-          axios.get(`${BASE_URL}/products/inventory/forecast`),
-          axios.get(`${BASE_URL}/bills/staff-performance`),
-          axios.get(`${BASE_URL}/products`),
-          axios.get(`${BASE_URL}/bills`),
-          axios.get(`${BASE_URL}/staff`)
+          axios.get(`/bills/revenue`),
+          axios.get(`/bills/top-selling`),
+          axios.get(`/products/inventory/forecast`),
+          axios.get(`/bills/staff-performance`),
+          axios.get(`/products`),
+          axios.get(`/bills`),
+          axios.get(`/staff`)
         ]);
 
         const today = new Date().toISOString().split("T")[0];
