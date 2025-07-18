@@ -9,11 +9,14 @@ export const initializeAdmin = async () => {
       const hashedPassword = await bcrypt.hash('admin123', 10);
 
       const admin = new Staff({
-        name: 'Default Admin',
+        name: 'Admin',
+        email: 'admin@example.com',
         username: 'admin',
         password: hashedPassword,
         role: 'Admin',
-        status: 'Active'
+        status: 'Active',
+        profileImageUrl: '',
+        imagePublicId: ''
       });
 
       await admin.save();

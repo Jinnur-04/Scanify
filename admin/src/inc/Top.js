@@ -1,23 +1,35 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function Top({ toggleSidebar }) {
+const Top = ({ toggleSidebar }) => {
   const navigate = useNavigate();
-  const uname = localStorage.getItem("uname");
-  const profileImage = localStorage.getItem("photo") || "/img/undraw_profile.svg";
+  const [uname, setUname] = useState(localStorage.getItem('uname') || '');
+  const [profileImage, setProfileImage] = useState(localStorage.getItem('photo') || '/img/undraw_profile.svg');
 
-  // Capitalize first letter of name
-  const formattedName = uname
-    ? uname.charAt(0).toUpperCase() + uname.slice(1)
-    : '';
+  const formattedName = uname ? uname[0].toUpperCase() + uname.slice(1) : '';
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setUname(localStorage.getItem('uname') || '');
+      setProfileImage(localStorage.getItem('photo') || '/img/undraw_profile.svg');
+    };
+
+    // Listen to storage change (optional for cross-tab)
+    window.addEventListener('storage', handleStorageChange);
+
+    // Manual refresh on component mount
+    handleStorageChange();
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   const handleLogout = () => {
-    // Close the logout modal if it's open
     const modalEl = document.getElementById('logoutModal');
     if (modalEl) {
       window.$(modalEl).modal('hide');
     }
-
     localStorage.clear();
     navigate('/');
   };
@@ -25,18 +37,11 @@ function Top({ toggleSidebar }) {
   return (
     <>
       <nav className="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-        <button
-          onClick={toggleSidebar}
-          className="btn btn-link d-md-none rounded-circle mr-3"
-        >
+        <button onClick={toggleSidebar} className="btn btn-link d-md-none rounded-circle mr-3">
           <i className="fa fa-bars" />
         </button>
 
-        {/* ✅ Back Button */}
-        <button
-          className="btn btn-outline-primary mr-3"
-          onClick={() => navigate(-1)}
-        >
+        <button className="btn btn-outline-primary mr-3" onClick={() => navigate(-1)}>
           &lt;
         </button>
 
@@ -57,30 +62,25 @@ function Top({ toggleSidebar }) {
               <img
                 className="img-profile rounded-circle"
                 src={profileImage}
-                alt="profile"
+                alt="User profile"
               />
             </a>
 
-            <div
-              className="dropdown-menu dropdown-menu-right shadow animated--grow-in"
-              aria-labelledby="userDropdown"
-            >
-              <button
-                className="dropdown-item"
-                onClick={() => navigate('/profile')}
-              >
-                <i className="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+            <div className="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
+              <button className="dropdown-item" onClick={() => navigate('/profile')}>
+                <i className="fas fa-user fa-sm fa-fw mr-2 text-gray-400" />
                 My Profile
               </button>
 
-              <div className="dropdown-divider"></div>
+              <div className="dropdown-divider" />
+
               <a
                 className="dropdown-item"
                 href="#!"
                 data-toggle="modal"
                 data-target="#logoutModal"
               >
-                <i className="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                <i className="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400" />
                 Logout
               </a>
             </div>
@@ -88,7 +88,7 @@ function Top({ toggleSidebar }) {
         </ul>
       </nav>
 
-      {/* Logout Modal */}
+      {/* Logout Confirmation Modal */}
       <div
         className="modal fade"
         id="logoutModal"
@@ -101,12 +101,7 @@ function Top({ toggleSidebar }) {
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title" id="logoutModalLabel">Ready to Leave?</h5>
-              <button
-                className="close"
-                type="button"
-                data-dismiss="modal"
-                aria-label="Close"
-              >
+              <button className="close" type="button" data-dismiss="modal" aria-label="Close">
                 <span aria-hidden="true">×</span>
               </button>
             </div>
@@ -114,11 +109,7 @@ function Top({ toggleSidebar }) {
               Select "Logout" below if you are ready to end your current session.
             </div>
             <div className="modal-footer">
-              <button
-                className="btn btn-secondary"
-                type="button"
-                data-dismiss="modal"
-              >
+              <button className="btn btn-secondary" type="button" data-dismiss="modal">
                 Cancel
               </button>
               <button className="btn btn-primary" onClick={handleLogout}>
@@ -130,6 +121,6 @@ function Top({ toggleSidebar }) {
       </div>
     </>
   );
-}
+};
 
 export default Top;

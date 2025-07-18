@@ -53,31 +53,69 @@ def fetch_products():
 def generate_prompt_map(staff, products):
     prompt_map = {}
 
+    # Helper to generate small spelling variants (naive)
+    def typo_variants(name):
+        variants = [name]
+        if 'a' in name: variants.append(name.replace('a', '@'))
+        if 'e' in name: variants.append(name.replace('e', '3'))
+        if 'i' in name: variants.append(name.replace('i', '1'))
+        if 'o' in name: variants.append(name.replace('o', '0'))
+        return variants
+
     for s in staff:
         name = s["name"].lower()
-        prompts = [
-            f"tell me the performance of {name}",
-            f"how did staffid {s['staffId']} perform?",
-            f"show me score for {name}",
-            f"{name} sales report",
-            f"staff performance {name}"
-        ]
+        name_variants = typo_variants(name)
+
+        prompts = []
+        for variant in name_variants:
+            prompts += [
+                f"tell me the performance of {variant}",
+                f"how did staff {variant} perform?",
+                f"how is {variant} doing?",
+                f"show me the performance report of {variant}",
+                f"{variant}'s score report",
+                f"evaluate {variant}'s performance",
+                f"{variant} performance report",
+                f"score of staff {variant}",
+                f"report card of {variant}",
+                f"sales report for {variant}",
+                f"how many bills handled by {variant}?",
+                f"{variant} staff performance",
+                f"what is {variant} staff score?",
+                f"{variant} performence",  # Common typo
+                f"{variant} sales"
+            ]
+        prompts.append(f"how did staffid {s['staffId']} perform?")
+
         for p in prompts:
-            prompt_map[p] = s
+            prompt_map[p.strip().lower()] = s
 
     for p in products:
         name = p["name"].lower()
-        prompts = [
-            f"what’s the forecast for {name}",
-            f"how many days {name} will last?",
-            f"tell me about inventory of {name}",
-            f"{name} stock details",
-            f"inventory forecast for {name}"
-        ]
+        name_variants = typo_variants(name)
+
+        prompts = []
+        for variant in name_variants:
+            prompts += [
+                f"what is the forecast for {variant}",
+                f"how many days will {variant} last?",
+                f"tell me about inventory of {variant}",
+                f"{variant} stock details",
+                f"inventory forecast for {variant}",
+                f"do we have enough {variant}?",
+                f"how much {variant} is left?",
+                f"current stock of {variant}",
+                f"{variant} inventory info",
+                f"availability of {variant}",
+                f"{variant} stock?",
+                f"{variant} invantory",  # Typo
+                f"{variant} available?"
+            ]
         for pr in prompts:
-            prompt_map[pr] = p
+            prompt_map[pr.strip().lower()] = p
 
     return prompt_map
+
 
 def save_prompt_embeddings(prompt_map):
     embeddings = model.encode(list(prompt_map.keys()), convert_to_tensor=True)
@@ -146,10 +184,10 @@ def fetch_aggregated_staff_performance(staff_mongo_id, staff_name):
 
 
 # ===================== Main AI Handler =====================
-def handle_ai_query(query: str):
+def handle_ai_query(query: str, current_user: dict):
     query = query.strip().lower()
 
-    # 🧠 Small talk
+    # --- Friendly prompts ---
     if any(w in query for w in ["hi", "hello", "hey"]):
         return {"message": "Hi there! 👋 I'm your Scanify Assistant. How can I help you today?"}
     if "who are you" in query:
@@ -161,7 +199,7 @@ def handle_ai_query(query: str):
     if "bye" in query:
         return {"message": "Goodbye! 👋 Have a great day!"}
 
-    # 🧠 Data load
+    # --- Load Data ---
     staff = fetch_staff()
     products = fetch_products()
     bills = fetch_bills()
@@ -172,22 +210,31 @@ def handle_ai_query(query: str):
     prompt_map, prompt_embeddings = load_prompt_embeddings()
     all_prompts = list(prompt_map.keys())
 
-    # 🧠 Semantic search
+    # --- Semantic Matching ---
     query_embedding = model.encode(query, convert_to_tensor=True)
     match = util.semantic_search(query_embedding, prompt_embeddings, top_k=1)[0][0]
     best_prompt = all_prompts[match["corpus_id"]]
     score = match["score"]
     matched_entity = prompt_map[best_prompt]
 
-    # 🧠 Extract name-based match
+    # --- Staff name fuzzy fallback ---
     matched_staff_by_name = extract_staff_by_name(query, staff)
-    print(f"Matched staff by name: {matched_staff_by_name}")
 
+    # 🔐 Role Check + Entity Handler
+    def user_can_access(staff_id):
+        return (
+            current_user["role"] == "Admin"
+            or str(current_user["_id"]) == str(staff_id)
+        )
+
+    # --- Low confidence fallback handler ---
     if score < 0.45:
-        # Name-based fallback for staff
         if matched_staff_by_name and any(w in query for w in ['performance', 'score', 'staff']):
             staff_name = matched_staff_by_name["name"]
             staff_mongo_id = matched_staff_by_name["_id"]
+
+            if not user_can_access(staff_mongo_id):
+                return {"message": "❌ You are not allowed to view other staff's performance details."}
 
             aggregated_data = fetch_aggregated_staff_performance(staff_mongo_id, staff_name)
             if not aggregated_data:
@@ -196,7 +243,6 @@ def handle_ai_query(query: str):
             score_result = evaluate_staff_scores([aggregated_data])[0]
             return format_staff_performance(score_result, matched_staff_by_name)
 
-        # Name-based fallback for products
         for p in products:
             if p["name"].lower() in query and any(w in query for w in ['forecast', 'stock', 'inventory']):
                 result = generate_inventory_forecast([p], bills)[0]
@@ -204,16 +250,29 @@ def handle_ai_query(query: str):
 
         return {"message": "I couldn't confidently understand your question. Please rephrase or ask about staff or inventory."}
 
-    # 🧠 Entity match handler
-    if matched_entity in staff:
-        result = evaluate_staff_scores([matched_entity])[0]
-        return format_staff_performance(result, matched_entity)
+    # --- High confidence: Staff match ---
+    if isinstance(matched_entity, dict) and "name" in matched_entity and "_id" in matched_entity:
+        staff_name = matched_entity["name"]
+        staff_mongo_id = matched_entity["_id"]
 
+        if not user_can_access(staff_mongo_id):
+            return {"message": "❌ You are not allowed to view other staff's performance details."}
+
+        aggregated_data = fetch_aggregated_staff_performance(staff_mongo_id, staff_name)
+        if not aggregated_data:
+            return {"message": f"No performance data found for {staff_name}."}
+
+        score_result = evaluate_staff_scores([aggregated_data])[0]
+        return format_staff_performance(score_result, matched_entity)
+
+    # --- Product match ---
     if matched_entity in products:
         result = generate_inventory_forecast([matched_entity], bills)[0]
         return format_inventory_forecast(result)
 
     return {"message": "Something went wrong. Please try again later."}
+
+
 
 # ===================== Formatters =====================
 def format_staff_performance(result, staff):

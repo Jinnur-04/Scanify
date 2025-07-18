@@ -4,3 +4,5 @@ pandas
 requests
 sentence-transformers
 pymongo
+python-dotenv
+PyJWT
