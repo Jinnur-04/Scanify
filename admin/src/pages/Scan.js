@@ -27,8 +27,8 @@ const BarcodeScanner = () => {
         setDevices(cameras);
         setSelectedDevice(cameras[0].id);
         scannerRef.current = html5QrCode;
-        socketRef.current = new WebSocket("ws://localhost:4000");
-        // socketRef.current = new WebSocket("wss://scanify-3vfo.onrender.com");
+        //socketRef.current = new WebSocket("ws://localhost:4000");
+        socketRef.current = new WebSocket("wss://scanify-3vfo.onrender.com");
         socketRef.current.onopen = () => {
           socketRef.current.send(JSON.stringify({
             type: "register",

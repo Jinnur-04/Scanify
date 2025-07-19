@@ -18,7 +18,8 @@ function BillPage() {
 
   useEffect(() => {
     if (!staffId) return;
-    const socket = new WebSocket("ws://localhost:4000");
+    const socket = new WebSocket("wss://scanify-3vfo.onrender.com");
+    //const socket = new WebSocket("ws://localhost:4000");
     const scanned = scannedBarcodes.current;
     let isMounted = true;
 
