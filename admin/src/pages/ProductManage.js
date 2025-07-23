@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Barcode from 'react-barcode';
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import axios from '../utils/axiosInstance';
 import 'react-toastify/dist/ReactToastify.css';
 
 function ProductManage() {
-  const uname = localStorage.getItem("uname");
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);

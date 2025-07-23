@@ -6,7 +6,11 @@ import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
 import cloudinary from '../utils/cloudinary.js';
 import multer from 'multer';
+import crypto from 'crypto';
+import nodemailer from 'nodemailer';
+import ResetToken from '../model/ResetToken.js';
 
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const storage = multer.memoryStorage();
 export const upload = multer({ storage });
 
@@ -134,49 +138,8 @@ export const loginStaff = async (req, res) => {
   }
 };
 
-// Forgot password (for demo only)
 
-export const forgotPassword = async (req, res) => {
-  try {
-    const { username } = req.body;
-    if (username==="admin"){
-      res.status(401).json({ message: 'Forget Password for Admin is Not Applicable, error: err.message' });
-  } 
-    const staff = await Staff.findOne({ username });
 
-    if (!staff) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.status(200).json({ message: 'User exists. You can reset password now.' });
-  } catch (err) {
-    res.status(500).json({ message: 'Error checking user', error: err.message });
-  }
-};
-
-//Reset Password 
-export const resetPassword = async (req, res) => {
-  try {
-    const { username, newPassword } = req.body;
-
-    const staff = await Staff.findOne({ username });
-    if (!staff) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (newPassword.length < 4) {
-      return res.status(400).json({ message: 'Password must be at least 4 characters.' });
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    staff.password = hashedPassword;
-    await staff.save();
-
-    res.status(200).json({ message: 'Password reset successful.' });
-  } catch (err) {
-    res.status(500).json({ message: 'Password reset failed', error: err.message });
-  }
-};
 
 // Staff Performance (for Bar Chart)
 export const getStaffPerformance = async (req, res) => {
@@ -190,7 +153,7 @@ export const getStaffPerformance = async (req, res) => {
       },
       {
         $lookup: {
-          from: "staffs", // Make sure this matches the actual MongoDB collection name (usually lowercase plural)
+          from: "staffs", 
           localField: "_id",
           foreignField: "_id",
           as: "staffInfo"
@@ -199,7 +162,7 @@ export const getStaffPerformance = async (req, res) => {
       {
         $unwind: {
           path: "$staffInfo",
-          preserveNullAndEmptyArrays: true // Avoid breaking if a staff member was deleted
+          preserveNullAndEmptyArrays: true
         }
       },
       {
@@ -284,7 +247,7 @@ export const updateProfilePhoto = async (req, res) => {
             else reject(error);
           }
         );
-        stream.end(req.file.buffer); // ✅ Call .end() on the stream
+        stream.end(req.file.buffer); 
       });
     };
 
@@ -303,5 +266,93 @@ export const updateProfilePhoto = async (req, res) => {
     console.error('❌ Profile photo upload error:', err);
     res.status(500).json({ message: 'Error updating profile photo', error: err.message });
   }
+};
+
+
+export const sendResetLink = async (req, res) => {
+  const { email } = req.body;
+
+  const staff = await Staff.findOne({ email });
+  if (!staff) {
+    return res.status(404).json({ message: 'No user found with this username.' });
+  }
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  // Save token to DB
+  await ResetToken.findOneAndDelete({ userId: staff._id });
+  await ResetToken.create({
+    userId: staff._id,
+    token: hashedToken,
+    createdAt: Date.now(),
+    expiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes
+  });
+
+  // Send email
+  const resetUrl = `${FRONTEND_URL}/reset-password/${token}`;
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  await transporter.sendMail({
+  from: `"Scanify Support" <${process.env.EMAIL_USER}>`,
+  to: staff.email,
+  subject: 'Password Reset Instructions - Scanify',
+  html: `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <h2 style="color: #2c3e50;">Hello ${staff.name},</h2>
+      <p>We received a request to reset the password for your Scanify account.</p>
+      <p><strong>Username:</strong> ${staff.username}</p>
+      <p>Please click the button below to proceed with resetting your password. This link will expire in <strong>15 minutes</strong> for security reasons.</p>
+      <a href="${resetUrl}" style="
+        display: inline-block;
+        margin: 20px 0;
+        padding: 10px 20px;
+        background-color: #4e73df;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+      ">
+        Reset Password
+      </a>
+      <p>If you didn’t request this change, you can safely ignore this email. No changes will be made to your account.</p>
+      <p>Best regards,<br/>The Scanify Support Team</p>
+    </div>
+  `,
+});
+
+
+  res.status(200).json({ message: 'Reset link sent to your email.' });
+};
+
+export const resetPassword = async (req, res) => {
+  const { token } = req.params;
+  const { newPassword } = req.body;
+
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+  const tokenDoc = await ResetToken.findOne({ token: hashedToken });
+
+  if (!tokenDoc || tokenDoc.expiresAt < Date.now()) {
+    return res.status(400).json({ message: 'Token is invalid or expired.' });
+  }
+
+  const staff = await Staff.findById(tokenDoc.userId);
+  if (!staff) {
+    return res.status(404).json({ message: 'User not found.' });
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  staff.password = hashedPassword;
+  await staff.save();
+
+  await ResetToken.deleteOne({ token: hashedToken });
+
+  res.status(200).json({ message: 'Password reset successful.' });
 };
 

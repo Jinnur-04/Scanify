@@ -5,7 +5,9 @@ import {
   getBillById,
   getDailyRevenue,
   getTopProducts,
-  getStaffPerformance 
+  getStaffPerformance,
+  createRazorpayOrderAndSaveBill ,
+  verifyAndFinalizeBillPayment
 } from '../controller/billController.js';
 import { authMiddleware, authorizeRoles } from '../middlewares/auth.js'; 
 
@@ -17,6 +19,8 @@ router.use(authMiddleware);
 // ✅ Routes with or without role-based protection
 router.post('/', saveBill);
 router.get('/', getBills);
+router.post('/payment/create-order-from-products',createRazorpayOrderAndSaveBill);
+router.post('/payment/verify', verifyAndFinalizeBillPayment);
 router.get('/revenue', authorizeRoles('Admin', 'Manager'), getDailyRevenue);
 router.get('/top-selling', getTopProducts);
 router.get('/staff-performance', authorizeRoles('Admin', 'Manager'), getStaffPerformance);

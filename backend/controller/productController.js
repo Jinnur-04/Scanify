@@ -2,7 +2,7 @@ import axios from 'axios';
 import Bill from '../model/Bill.js';
 import { ProductType, ProductItem } from '../model/Product.js';
 import cloudinary from '../utils/cloudinary.js';
-const API= process.env.MODEL_API
+const API = process.env.MODEL_API
 
 // 📤 Upload to Cloudinary
 const uploadToCloudinary = async (buffer) => {
@@ -146,7 +146,6 @@ export const getProductByBarcode = async (req, res) => {
     console.log("🔍 Fetching product by barcode:", req.params.barcode);
 
     const item = await ProductItem.findOne({ barcode: req.params.barcode }).populate('type');
-
     if (!item) {
       return res.status(404).json({ message: 'Product not found' });
     }
@@ -156,12 +155,29 @@ export const getProductByBarcode = async (req, res) => {
       sold: item.sold
     };
 
-    res.json(productWithStatus);
+    let customer = null;
+
+    if (item.sold) {
+      const bill = await Bill.findOne({ 'items.barcode': item.barcode });
+      // console.log("🔍 Found bill for sold item:", bill?._id);
+      if (bill) {
+        customer = bill.customer;
+      }
+    }
+    console.log(productWithStatus)
+
+    // console.log("✅ Returning product with conditional customer");
+    res.json({
+      product: productWithStatus,
+      customer
+    });
+
   } catch (err) {
-    console.error("❌ Error in getProductByBarcode:", err);
+    // console.error("❌ Error in getProductByBarcode:", err);
     res.status(500).json({ message: 'Failed to fetch product by barcode', error: err.message });
   }
 };
+
 
 
 // 🔁 Update ProductType

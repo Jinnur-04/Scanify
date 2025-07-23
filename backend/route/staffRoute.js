@@ -9,7 +9,7 @@ import {
   updateStaff,
   deleteStaff,
   loginStaff,
-  forgotPassword,
+  sendResetLink,
   resetPassword,
   getStaffPerformance,
   getStaffProfileWithStats,
@@ -44,8 +44,9 @@ router.post(
   loginStaff
 );
 
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password', resetPassword);
+router.post('/send-reset-link', sendResetLink);
+router.post('/reset-password/:token', resetPassword);
+
 
 // 🔐 Protected Routes
 

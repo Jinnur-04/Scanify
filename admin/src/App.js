@@ -13,6 +13,7 @@ import BillPage from './pages/BillPage';
 import LoginPage from './pages/Login';
 import RegisterPage from './pages/Register';
 import ForgetPassword from './pages/ForgetPassword';
+import ResetPassword from './pages/ResetPassword';
 import StaffManagement from './pages/StaffManagement';
 import BillManagement from './pages/BillManagement';
 import ProfileManagement from './pages/Profile';
@@ -26,6 +27,8 @@ function App() {
           <Route path="/" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgetpassword" element={<ForgetPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+
 
           {/* Protected routes */}
           <Route

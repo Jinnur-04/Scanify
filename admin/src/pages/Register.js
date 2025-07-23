@@ -48,7 +48,7 @@ function Register() {
     try {
       await axios.post(`${BASE_URL}/staff/register`, {
         ...formData,
-        status: 'InActive',
+        status: 'Inactive',
       });
 
       toast.success('Registration successful. You can now login.');

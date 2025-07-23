@@ -1,33 +1,6 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 
 function Footer() {
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    // Remove Bootstrap modal backdrop manually
-    const modal = document.getElementById('logoutModal');
-    const backdrop = document.querySelector('.modal-backdrop');
-
-    if (modal) {
-      modal.classList.remove('show');
-      modal.style.display = 'none';
-      modal.setAttribute('aria-hidden', 'true');
-    }
-
-    if (backdrop) {
-      backdrop.parentNode.removeChild(backdrop);
-    }
-
-    document.body.classList.remove('modal-open');
-    document.body.style = '';
-
-    // Clear storage and navigate
-    localStorage.removeItem('uname');
-    localStorage.removeItem('role');
-    localStorage.removeItem('staffId');
-    navigate('/');
-  };
 
   return (
     <>

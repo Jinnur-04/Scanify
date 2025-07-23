@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../utils/axiosInstance';
-import { Link } from 'react-router-dom';
+
 
 
 function StaffManagement() {
-  const uname = localStorage.getItem("uname");
-  const [showPassword, setShowPassword] = useState(false);
   const [staffList, setStaffList] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [editStaff, setEditStaff] = useState(null);

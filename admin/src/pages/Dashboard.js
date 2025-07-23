@@ -4,7 +4,7 @@ import axios from '../utils/axiosInstance';
 import { Chart } from 'chart.js/auto';
 
 function Dashboard() {
-  const uname = localStorage.getItem("uname");
+  // const uname = localStorage.getItem("uname");
 
   const [stats, setStats] = useState({
     totalProducts: 0,
