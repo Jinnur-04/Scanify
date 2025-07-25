@@ -119,7 +119,6 @@ export const getTopProducts = async (req, res) => {
       { $sort: { count: -1 } },
       { $limit: 5 }
     ]);
-
     const labels = result.map(r => r._id);
     const data = result.map(r => r.count);
 

@@ -3,9 +3,11 @@ import axios from '../utils/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useSelector } from 'react-redux';
+const socket_url=process.env.REACT_APP_SOCKET_URL || "ws://localhost:4000";
 
 function BillPage() {
-  const staffId = localStorage.getItem('staffId');
+  const staffId = useSelector((state)=>state.user.staffId)
   const navigate = useNavigate();
   const scannedBarcodes = useRef(new Set());
 
@@ -19,8 +21,8 @@ function BillPage() {
   useEffect(() => {
     if (!staffId) return;
 
-    //const socket = new WebSocket("ws://localhost:4000");
-    const socket = new WebSocket("wss://scanify-3vfo.onrender.com");
+    const socket = new WebSocket(`${socket_url}`);
+    //const socket = new WebSocket("wss://scanify-3vfo.onrender.com");
     const scanned = scannedBarcodes.current;
     let isMounted = true;
 

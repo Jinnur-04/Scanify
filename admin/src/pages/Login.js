@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-
+import { useDispatch } from 'react-redux';
+import { setUser } from '../redux/slices/userSlice';
 const BASE_URL = process.env.REACT_APP_API_URL;
 
 function Login() {
@@ -10,6 +11,7 @@ function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleLogin = async () => {
     if (!userName || !password) {
@@ -30,11 +32,14 @@ function Login() {
         return;
       }
 
-      localStorage.setItem('uname', res.data.name);
-      localStorage.setItem('role', res.data.role);
-      localStorage.setItem('staffId', res.data._id);
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('photo', res.data.profileImageUrl || ''); // ✅ Save profile photo URL
+      dispatch(setUser({
+        name: staff.name,
+        photo: staff.profileImageUrl || '',
+        role: staff.role,
+        token: staff.token,
+        staffId: staff._id,
+      }));
+
 
       toast.success(`Welcome ${staff.name}!`);
 

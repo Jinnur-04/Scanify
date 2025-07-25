@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './sidebar.css';
+import { useSelector } from 'react-redux';
 
 function Sidebar({ isOpen, closeSidebar }) {
   const [vh, setVh] = useState(window.innerHeight);
   const isMobile = window.innerWidth < 768;
-  const role = localStorage.getItem('role'); // e.g., 'Admin', 'Manager', 'Billing', etc.
+  const role = useSelector((state)=>state.user.role);
 
   useEffect(() => {
     const handleResize = () => setVh(window.innerHeight);

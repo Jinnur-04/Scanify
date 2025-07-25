@@ -1,29 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 const Top = ({ toggleSidebar }) => {
   const navigate = useNavigate();
-  const [uname, setUname] = useState(localStorage.getItem('uname') || '');
-  const [profileImage, setProfileImage] = useState(localStorage.getItem('photo') || '/img/undraw_profile.svg');
+  const {name,photo} = useSelector((state) => state.user);
+  const formattedName = name ? name[0].toUpperCase() + name.slice(1) : '';
 
-  const formattedName = uname ? uname[0].toUpperCase() + uname.slice(1) : '';
-
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setUname(localStorage.getItem('uname') || '');
-      setProfileImage(localStorage.getItem('photo') || '/img/undraw_profile.svg');
-    };
-
-    // Listen to storage change (optional for cross-tab)
-    window.addEventListener('storage', handleStorageChange);
-
-    // Manual refresh on component mount
-    handleStorageChange();
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
 
   const handleLogout = () => {
     const modalEl = document.getElementById('logoutModal');
@@ -56,12 +39,12 @@ const Top = ({ toggleSidebar }) => {
               aria-haspopup="true"
               aria-expanded="false"
             >
-              <span className="mr-2 d-none d-lg-inline text-gray-600 small">
+              <span className="mr-2  d-lg-inline text-dark small">
                 {formattedName}
               </span>
               <img
                 className="img-profile rounded-circle"
-                src={profileImage}
+                src={photo}
                 alt="User profile"
               />
             </a>

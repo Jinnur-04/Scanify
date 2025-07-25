@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-
+import { useSelector } from 'react-redux';
+const socket_url = process.env.REACT_APP_SOCKET_URL || "ws://localhost:4000";
 const BarcodeScanner = () => {
   const scannerRef = useRef(null);
   const socketRef = useRef(null);
@@ -12,7 +13,7 @@ const BarcodeScanner = () => {
   const [devices, setDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState(null);
 
-  const staffId = localStorage.getItem("staffId");
+  const staffId = useSelector((state)=>state.user.staffId);
 
   useEffect(() => {
     const initScanner = async () => {
@@ -27,8 +28,8 @@ const BarcodeScanner = () => {
         setDevices(cameras);
         setSelectedDevice(cameras[0].id);
         scannerRef.current = html5QrCode;
-        //socketRef.current = new WebSocket("ws://localhost:4000");
-        socketRef.current = new WebSocket("wss://scanify-3vfo.onrender.com");
+        socketRef.current = new WebSocket(`${socket_url}`);
+        //socketRef.current = new WebSocket("wss://scanify-3vfo.onrender.com");
         socketRef.current.onopen = () => {
           socketRef.current.send(JSON.stringify({
             type: "register",

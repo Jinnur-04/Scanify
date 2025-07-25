@@ -1,8 +1,9 @@
 // components/PrivateRoute.jsx
 import { Navigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 const PrivateRoute = ({ children }) => {
-  const token = localStorage.getItem('staffId'); // or your actual auth check
+  const token = useSelector((state) => state.user.token);
   return token ? children : <Navigate to="/" replace />;
 };
 

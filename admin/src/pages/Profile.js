@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../utils/axiosInstance';
 import { toast } from 'react-toastify';
+import {useSelector} from 'react-redux';
 
 function MyProfile() {
   const token = localStorage.getItem('token');
   const staffId = localStorage.getItem('staffId');
+  const {name,photo}= useSelector((state)=>state.user)
 
   const [user, setUser] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -22,10 +24,10 @@ function MyProfile() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUser(res.data);
-      localStorage.setItem('uname', res.data.name);
-      if (res.data.profileImageUrl) {
-        localStorage.setItem('photo', res.data.profileImageUrl);
-      }
+      // localStorage.setItem('uname', res.data.name);
+      // if (res.data.profileImageUrl) {
+      //   localStorage.setItem('photo', res.data.profileImageUrl);
+      // }
     } catch (err) {
       toast.error('❌ Failed to fetch profile');
     }
@@ -109,7 +111,7 @@ function MyProfile() {
           {/* Profile Image + Upload */}
           <div className="col-md-3 text-center mb-3">
             <img
-              src={preview || user.profileImageUrl || '/img/undraw_profile.svg'}
+              src={preview || photo || '/img/undraw_profile.svg'}
               className="img-fluid rounded-circle border"
               style={{ width: '130px', height: '130px', objectFit: 'cover' }}
               alt="Profile"
